@@ -12,11 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->string('login')->unique();
             $table->string('phone')->nullable();
             $table->string('password');
-            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete(); // Mutaxassis qaysi kategoriya
             $table->timestamps();
         });
 
