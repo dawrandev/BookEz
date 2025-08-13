@@ -15,11 +15,11 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::create([
-            'name' => 'User',
-            'login' => 'user',
-            'phone' => null,
-            'password' => Hash::make('user'),
-            'category_id' => null
+            'name' => 'Meyirimov',
+            'login' => 'meyirimov',
+            'phone' => '+998911233212',
+            'password' => Hash::make('meyirimov'),
+            'category_id' => 1
         ])->assignRole('specialist');
 
         User::create([

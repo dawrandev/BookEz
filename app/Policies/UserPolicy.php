@@ -8,6 +8,12 @@ use App\Models\User;
 
 class UserPolicy
 {
+    public function before(User $user, $ability)
+    {
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+    }
     /**
      * Determine whether the user can view any models.
      */

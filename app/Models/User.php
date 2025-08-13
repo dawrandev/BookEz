@@ -49,8 +49,22 @@ class User extends Authenticatable
         ];
     }
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($user) {
+            $user->assignRole('specialist');
+        });
+    }
+
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function services()
+    {
+        return $this->hasMany(Service::class);
     }
 }
