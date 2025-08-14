@@ -74,8 +74,10 @@ class UserResource extends Resource
                 TextInput::make('password')
                     ->label('Пароль')
                     ->password()
-                    ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->required(fn($livewire) => $livewire instanceof Pages\CreateUser) // create sahifada required
+                    ->dehydrated(fn($state) => filled($state)) // bo‘sh bo‘lsa update qilmaydi
+                    ->afterStateHydrated(fn($component, $state, $record) => $component->state(null))
             ]);
     }
 

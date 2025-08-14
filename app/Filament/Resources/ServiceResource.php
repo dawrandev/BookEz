@@ -31,10 +31,12 @@ class ServiceResource extends Resource
         $query = parent::getEloquentQuery();
         $user = Auth::user();
 
+        if ($user->hasRole('admin')) {
+            return $query;
+        }
+
         return $query->where('user_id', $user->id);
     }
-
-
 
     public static function form(Form $form): Form
     {
