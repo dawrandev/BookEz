@@ -13,6 +13,10 @@ class ClientPolicy
         if ($user->hasRole('admin')) {
             return true;
         }
+
+        if ($user->hasRole('specialist') && in_array($ability, ['viewAny', 'view'])) {
+            return true;
+        }
     }
     /**
      * Determine whether the user can view any models.

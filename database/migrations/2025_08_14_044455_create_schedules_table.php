@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->date('work_date');
-            $table->time('start_time')->nullable();   // day off bo'lsa null
-            $table->time('end_time')->nullable();     // day off bo'lsa null
+            $table->time('start_time')->nullable();
+            $table->time('end_time')->nullable();
             $table->boolean('is_day_off')->default(false);
             $table->timestamps();
             $table->unique(['user_id', 'work_date']);

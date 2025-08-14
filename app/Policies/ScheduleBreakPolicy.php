@@ -8,6 +8,12 @@ use App\Models\User;
 
 class ScheduleBreakPolicy
 {
+    public function before(User $user, $ability)
+    {
+        if ($user->hasRole('specialist')) {
+            return true;
+        }
+    }
     /**
      * Determine whether the user can view any models.
      */
