@@ -9,7 +9,10 @@
         "althinect/filament-spatie-roles-permissions": "^2.3",
         "filament/filament": "3.3",
         "hasnayeen/themes": "^3.0",
+        "irazasyed/telegram-bot-sdk": "^3.15",
         "laravel/framework": "^11.0",
+        "laravel/sanctum": "^4.0",
+        "laravel/telescope": "^5.11",
         "laravel/tinker": "^2.9"
     },
     "require-dev": {
