@@ -4,20 +4,30 @@ namespace App\Services\Telegram;
 
 use App\Handlers\Telegram\CallBackQueryHandler;
 use App\Handlers\Telegram\MessageHandler;
+use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
 class TelegramService
 {
     public function handle($request)
     {
-        $update = Telegram::getWebhookUpdate();
+        try {
+            $update = Telegram::getWebhookUpdate();
 
-        if ($update->getMessage()) {
-            app(MessageHandler::class)->handle(($update->getMessage()));
-        }
+            if ($update->getCallbackQuery()) {
+                app(CallBackQueryHandler::class)->handle($update->getCallbackQuery());
+                return;
+            }
 
-        if ($update->getCallbackQuery()) {
-            app(CallBackQueryHandler::class)->handle($update->getCallbackQuery());
+            if ($update->getMessage()) {
+                app(MessageHandler::class)->handle($update->getMessage());
+                return;
+            }
+        } catch (\Exception $e) {
+            Log::error('TelegramService error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
         }
     }
 }

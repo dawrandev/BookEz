@@ -2,39 +2,51 @@
 
 namespace App\Commands\Telegram;
 
+use App\Services\Telegram\ClientService;
 use Exception;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Commands\Command;
-use Telegram\Bot\Laravel\Facades\Telegram;
 
 class StartCommand extends Command
 {
     protected string $name = 'start';
     protected string $description = 'Start command';
-    protected $chatId;
+
+    public function __construct(protected ClientService $clientService)
+    {
+        // 
+    }
 
     public function handle()
     {
         try {
-            if ($this->update->getMessage()) {
-                $this->chatId = $this->update->getMessage()->getChat()->getId();
-            } elseif ($this->update->getCallbackQuery()) {
-                $this->chatId = $this->update->getCallbackQuery()->getMessage()->getChat()->getId();
+            $chatId = $this->getChatId();
+
+            if ($this->clientService->isClientRegistered($chatId)) {
+                $client = $this->clientService->getClientByChatId($chatId);
+                $this->replyWithMessage([
+                    'text' => "Assalawma Aleykum, {$client->full_name}! Siz dizimnen ótkensiz."
+                ]);
+                return;
             }
 
-            Cache::put("register_step_$this->chatId", 'ask_full_name', 300);
-
-            $this->replyWithMessage([
-                'text' => 'Assalawma Aleykum! Dizimnen ótiw ushın iltimas tolıq atıńız hám familiyańızdı kiritiń'
-            ]);
+            $this->clientService->startRegistration($chatId);
         } catch (Exception $e) {
-            Log::error($e->getMessage());
-
-            $this->telegram->sendMessage([
-                'chat_id' => $this->chatId,
+            Log::error('StartCommand error: ' . $e->getMessage());
+            $this->replyWithMessage([
                 'text' => 'Qátelik júz berdi. Iltimas qaytadan urınıp kóriń'
             ]);
         }
+    }
+
+    private function getChatId(): int
+    {
+        if ($this->update->getMessage()) {
+            return $this->update->getMessage()->getChat()->getId();
+        } elseif ($this->update->getCallbackQuery()) {
+            return $this->update->getCallbackQuery()->getMessage()->getChat()->getId();
+        }
+
+        throw new Exception('Cannot determine chat ID');
     }
 }
