@@ -13,5 +13,6 @@ class Client extends Model
         'username',
         'full_name',
         'phone',
+        'status'
     ];
 }

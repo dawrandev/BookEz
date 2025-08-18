@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->integer('duration_minutes')->required();
             $table->decimal('price', 10, 2);
+            $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
         });
     }

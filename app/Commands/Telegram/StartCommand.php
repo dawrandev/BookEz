@@ -27,8 +27,11 @@ class StartCommand extends Command
                 $this->replyWithMessage([
                     'text' => "Assalawma Aleykum, {$client->full_name}! Siz dizimnen ótkensiz."
                 ]);
+
+                $this->clientService->showMainMenu($chatId);
                 return;
             }
+
 
             $this->clientService->startRegistration($chatId);
         } catch (Exception $e) {

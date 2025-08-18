@@ -45,7 +45,7 @@ class ClientService
 
             $this->clearRegistrationCache($chatId);
 
-            $this->showCategories($chatId);
+            $this->showMainMenu($chatId);
         } catch (\Exception $e) {
             Log::error("Client creation failed: " . $e->getMessage());
             $this->sendMessage($chatId, 'Dizimde qatelik júz berdi. Iltimas qaytadan urınıp kóriń');
@@ -98,6 +98,31 @@ class ClientService
     public function showCategories(int $chatId): void
     {
         $categoryService = $this->categoryService->showCategoriesToUser($chatId);
+    }
+
+    public function showMainMenu(int $chatId)
+    {
+        $keyboard = json_encode([
+            'inline_keyboard' => [
+                [
+                    ['text' => '➕Bron qılıw', 'callback_data' => 'new_bron']
+                ],
+                [
+                    ['text' => '👨‍⚕️ Specialistler', 'callback_data' => 'specialists'],
+                    ['text' => '📂 Kategoriyalar', 'callback_data' => 'categories'],
+                ],
+                [
+                    ['text' => '📖Bronlarım', 'callback_data' => 'my_brons']
+                ]
+            ]
+
+        ]);
+
+        Telegram::sendMessage([
+            'chat_id' => $chatId,
+            'text' => '🏠 Bas menyu',
+            'reply_markup' => $keyboard
+        ]);
     }
 
     private function sendMessage(int $chatId, string $text): void

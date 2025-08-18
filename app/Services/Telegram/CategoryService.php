@@ -56,8 +56,6 @@ class CategoryService
         // Bu yerda kategoriya tanlangandan keyin qilish kerak bo'lgan ishlarni yozasiz
         // Masalan: mahsulotlarni ko'rsatish, boshqa service'ga o'tkazish va h.k.
 
-        $this->sendMessage($chatId, "Siz \"{$category->name}\" kategoriyanı tanladıńız.");
-
         // Keyingi qadamlar uchun:
         // - ProductService'ga o'tkazish
         // - Subkategoriyalar ko'rsatish
@@ -88,40 +86,6 @@ class CategoryService
 
         return json_encode([
             'inline_keyboard' => $keyboard
-        ]);
-    }
-
-    private function buildCategoryReplyKeyboard(Collection $categories): string
-    {
-        $keyboard = [];
-        $buttonsPerRow = 2;
-        $buttons = [];
-
-        foreach ($categories as $category) {
-            $buttons[] = [
-                'text' => $category->name . ($category->emoji ? " {$category->emoji}" : '')
-            ];
-
-            if (count($buttons) >= $buttonsPerRow) {
-                $keyboard[] = $buttons;
-                $buttons = [];
-            }
-        }
-
-        if (!empty($buttons)) {
-            $keyboard[] = $buttons;
-        }
-
-        $keyboard[] = [
-            [
-                'text' => '🔙 Artqa'
-            ]
-        ];
-
-        return json_encode([
-            'keyboard' => $keyboard,
-            'resize_keyboard' => true,
-            'one_time_keyboard' => false
         ]);
     }
 

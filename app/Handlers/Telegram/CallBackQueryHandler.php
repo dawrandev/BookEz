@@ -3,81 +3,56 @@
 namespace App\Handlers\Telegram;
 
 use App\Services\Telegram\CategoryService;
-use Exception;
-use Illuminate\Support\Facades\Log;
-use Telegram\Bot\Laravel\Facades\Telegram;
+use App\Services\Telegram\SpecialistService;
+use App\Services\Telegram\UserService;
+use Telegram\Bot\Objects\CallbackQuery;
 
 class CallbackQueryHandler
 {
-    protected $callbackQuery;
-    protected $chatId;
-    protected $data;
-
-    public function __construct(protected CategoryService $categoryService)
-    {
-
-        $update = Telegram::getWebhookUpdate();
-        $this->callbackQuery = $update->getCallbackQuery();
-        $this->chatId = $this->callbackQuery->getMessage()->getChat()->getId();
-        $this->data = $this->callbackQuery->getData();
+    public function __construct(
+        protected UserService $userService,
+        protected CategoryService $categoryService,
+        protected SpecialistService $specialistService
+    ) {
+        //
     }
 
-    public function handle()
+    public function handle(CallbackQuery $callbackQuery): void
     {
-        try {
-            $this->answerCallbackQuery();
+        $data = $callbackQuery->getData();
+        $chatId = $callbackQuery->getMessage()->getChat()->getId();
 
-            if (str_starts_with($this->data, 'category_')) {
-                $this->handleCategoryCallback();
+        $handlers = [
+            'category_'   => fn() => $this->handleCategoryCallback($chatId, $data),
+            'specialist_' => fn() => $this->handleSpecialistCallback($chatId, $data),
+            'specialists' => fn() => $this->userService->showSpecialists($chatId, $data),
+            'categories' => fn() => $this->categoryService->showCategoriesToUser($chatId),
+            'specialist_services_' => fn() => $this->handleSpecialistServiceCallback($chatId, $data)
+        ];
+
+        foreach ($handlers as $prefix => $callback) {
+            if (str_starts_with($data, $prefix)) {
+                $callback();
                 return;
             }
-
-            $this->handleUnknownCallback();
-        } catch (Exception $e) {
-            Log::error('CallbackQueryHandler error: ' . $e->getMessage());
-            $this->sendErrorMessage();
         }
     }
 
-    /**
-     * Handle category selection callback
-     */
-    private function handleCategoryCallback(): void
+    private function handleCategoryCallback(int $chatId, string $data): void
     {
-        $categoryId = (int) str_replace('category_', '', $this->data);
-        $this->categoryService->handleCategorySelection($this->chatId, $categoryId);
+        $categoryId = substr($data, strlen('category_'));
+        $this->categoryService->handleCategorySelection($chatId, $categoryId);
     }
 
-    /**
-     * Handle unknown callback data
-     */
-    private function handleUnknownCallback(): void
+    private function handleSpecialistCallback(int $chatId, string $data): void
     {
-        Telegram::sendMessage([
-            'chat_id' => $this->chatId,
-            'text' => 'Noma\'lum buyruq.'
-        ]);
+        $specialistId = substr($data, strlen('specialist_'));
+        $this->userService->handleSpecialistSection($chatId, $specialistId);
     }
 
-    /**
-     * Answer callback query (tugma bosilganligini tasdiqlash)
-     */
-    private function answerCallbackQuery(): void
+    private function handleSpecialistServiceCallback(int $chatId, string $data): void
     {
-        Telegram::answerCallbackQuery([
-            'callback_query_id' => $this->callbackQuery->getId(),
-            'text' => '' // Yoki qisqa xabar
-        ]);
-    }
-
-    /**
-     * Send error message
-     */
-    private function sendErrorMessage(): void
-    {
-        Telegram::sendMessage([
-            'chat_id' => $this->chatId,
-            'text' => 'Xatolik yuz berdi. Qaytadan urinib ko\'ring.'
-        ]);
+        $specialistId = substr($data, strlen('specialist_services_'));
+        $this->specialistService->handleSpecialistServicesSection($chatId, $specialistId);
     }
 }

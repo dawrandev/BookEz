@@ -19,15 +19,18 @@ class UserSeeder extends Seeder
             'login' => 'meyirimov',
             'phone' => '+998911233212',
             'password' => Hash::make('meyirimov'),
-            'category_id' => 1
+            'category_id' => 1,
+            'description' => 'Lorem ipsum dolor sit amet consectetur, adipisicing elit. Nostrum pariatur, dolor magnam mollitia sunt eos voluptatibus? Perferendis, deserunt, iusto explicabo saepe repellat quae libero neque, magni labore voluptate ducimus exercitationem.',
+            'status' => 'active'
         ])->assignRole('specialist');
 
-        User::create([
-            'name' => 'Admin',
-            'login' => 'admin',
-            'phone' => null,
-            'password' => Hash::make('admin'),
-            'category_id' => null
-        ])->assignRole('admin');
+        User::firstOrCreate(
+            ['login' => 'admin'],
+            [
+                'name' => 'Admin',
+                'password' => Hash::make('admin'),
+                'status' => 'active',
+            ]
+        )->syncRoles(['admin']);
     }
 }
