@@ -105,9 +105,6 @@ class ClientService
         $keyboard = json_encode([
             'inline_keyboard' => [
                 [
-                    ['text' => '➕Bron qılıw', 'callback_data' => 'new_bron']
-                ],
-                [
                     ['text' => '👨‍⚕️ Specialistler', 'callback_data' => 'specialists'],
                     ['text' => '📂 Kategoriyalar', 'callback_data' => 'categories'],
                 ],

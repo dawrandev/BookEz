@@ -10,11 +10,11 @@ class ServicePolicy
 {
     public function before(User $user, $ability)
     {
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole('specialist')) {
             return true;
         }
 
-        if ($user->hasRole('specialist') && in_array($ability, ['viewAny', 'view'])) {
+        if ($user->hasRole('admin') && in_array($ability, ['viewAny', 'view'])) {
             return true;
         }
     }

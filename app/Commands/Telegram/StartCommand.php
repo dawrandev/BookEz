@@ -24,11 +24,9 @@ class StartCommand extends Command
 
             if ($this->clientService->isClientRegistered($chatId)) {
                 $client = $this->clientService->getClientByChatId($chatId);
-                $this->replyWithMessage([
-                    'text' => "Assalawma Aleykum, {$client->full_name}! Siz dizimnen ótkensiz."
-                ]);
 
                 $this->clientService->showMainMenu($chatId);
+
                 return;
             }
 

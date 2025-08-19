@@ -18,4 +18,9 @@ class Service extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
 }

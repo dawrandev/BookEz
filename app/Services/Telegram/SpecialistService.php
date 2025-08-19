@@ -7,12 +7,13 @@ use Telegram\Bot\Laravel\Facades\Telegram;
 
 class SpecialistService
 {
-    public function handleSpecialistServicesSection(int $chatId, $specialistId)
+    public function handleSpecialistServicesSection(int $chatId, int $specialistId): void
     {
         $services = $this->getServicesBySpecialistId($specialistId);
 
-        if ($services) {
+        if ($services->isEmpty()) {
             $this->sendMessage($chatId, 'Xizmetler kórsetilmegen');
+            return;
         }
 
         $keyboard = [];
@@ -30,6 +31,7 @@ class SpecialistService
             'reply_markup' => json_encode(['inline_keyboard' => $keyboard])
         ]);
     }
+
 
     public function getServicesBySpecialistId($specialistId)
     {

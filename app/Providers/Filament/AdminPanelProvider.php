@@ -34,6 +34,25 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+
+            ->sidebarCollapsibleOnDesktop()
+            ->sidebarFullyCollapsibleOnDesktop()
+            ->collapsedSidebarWidth('4rem')
+            ->sidebarWidth('16rem')
+            ->maxContentWidth('full')
+
+            ->brandName('Admin Panel')
+            ->favicon(asset('favicon.ico'))
+            ->brandLogoHeight('2rem')
+
+            // Navigation sozlamalari
+            ->navigationGroups([
+                'Boshqaruv',
+                'Foydalanuvchilar',
+                'Hisobotlar',
+                'Sozlamalar',
+            ])
+
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([

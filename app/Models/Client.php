@@ -15,4 +15,9 @@ class Client extends Model
         'phone',
         'status'
     ];
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
 }

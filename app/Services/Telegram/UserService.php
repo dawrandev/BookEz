@@ -106,7 +106,6 @@ class UserService
             ]
         ]);
 
-
         Telegram::sendMessage([
             'text' => $text,
             'chat_id' => $chatId,

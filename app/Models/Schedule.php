@@ -31,4 +31,9 @@ class Schedule extends Model
     {
         return $this->hasMany(ScheduleBreak::class);
     }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
 }
