@@ -6,17 +6,25 @@ use App\Models\Booking;
 use App\Models\Schedule;
 use App\Models\ScheduleBreak;
 use App\Models\Service;
+use App\Notifications\TelegramNotificationService;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
 class BookingService
 {
+    public function __construct(
+        protected TelegramNotificationService $telegramNotificationService
+    ) {
+        //
+    }
+
     public function sendAvailableTimes(int $chatId, int $specialistId, int $serviceId, ?string $date = null)
     {
         $service = Service::findOrFail($serviceId);
 
-        // Agar date berilmagan bo'lsa, eng yaqin ish kunini tanlash
         if (!$date) {
             $schedule = $this->getNextAvailableSchedule($specialistId);
         } else {
@@ -45,16 +53,13 @@ class BookingService
     {
         $now = Carbon::now();
 
-        // Bugungi kun va undan keyingi kunlarni qidirish
         return Schedule::where('user_id', $specialistId)
             ->where('is_day_off', false)
             ->where(function ($query) use ($now) {
-                // Bugun bo'lsa va ish vaqti hali tugamagan bo'lsa
                 $query->where(function ($q) use ($now) {
                     $q->where('work_date', $now->toDateString())
                         ->where('end_time', '>', $now->toTimeString());
                 })
-                    // Yoki kelajakdagi kunlar
                     ->orWhere('work_date', '>', $now->toDateString());
             })
             ->orderBy('work_date')
@@ -84,20 +89,17 @@ class BookingService
         $lines[] = "";
 
         foreach ($period as $hour) {
-            if ($hour->gte($endTime)) break; // End time'dan keyin chiqmasin
+            if ($hour->gte($endTime)) break;
 
             $blockEnd = $hour->copy()->addMinutes($duration);
 
-            // Dam olish vaqtini tekshirish
             $isBreakTime = $this->isBreakTime($hour, $breaks);
 
-            // Bron qilinganlikni tekshirish (faqat dam olish vaqti bo'lmasa)
             $isBooked = false;
             if (!$isBreakTime) {
                 $isBooked = $this->isTimeBooked($hour, $blockEnd, $bookings);
             }
 
-            // Status belgilash
             if ($isBreakTime) {
                 $breakReason = $this->getBreakReason($hour, $breaks);
                 $statusText = "🍽️ " . ($breakReason ?: 'Dam olish');
@@ -133,11 +135,9 @@ class BookingService
 
             $blockEnd = $hour->copy()->addMinutes($duration);
 
-            // Dam olish va bron tekshirish
             $isBreakTime = $this->isBreakTime($hour, $breaks);
             $isBooked = $this->isTimeBooked($hour, $blockEnd, $bookings);
 
-            // Faqat bo'sh vaqtlar uchun tugma yaratish
             if (!$isBreakTime && !$isBooked) {
                 $availableButtons[] = [
                     'text' => $hour->format('H:i'),
@@ -146,7 +146,6 @@ class BookingService
             }
         }
 
-        // Tugmalarni 3 taga bo'lib joylashtirish
         $keyboard = [];
         $buttonsPerRow = 3;
         $chunks = array_chunk($availableButtons, $buttonsPerRow);
@@ -155,13 +154,11 @@ class BookingService
             $keyboard[] = $chunk;
         }
 
-        // Pagination tugmalari
         $navButtons = $this->getPaginationButtons($specialistId, $schedule, $service->id);
         if (!empty($navButtons)) {
             $keyboard[] = $navButtons;
         }
 
-        // Orqaga qaytish tugmasi
         $keyboard[] = [
             ['text' => '🔙 Xizmatlarga qaytish', 'callback_data' => "specialist_services_{$specialistId}"]
         ];
@@ -173,14 +170,12 @@ class BookingService
     {
         $buttons = [];
 
-        // Oldingi kun
         $previous = Schedule::where('user_id', $specialistId)
             ->where('work_date', '<', $currentSchedule->work_date)
             ->where('is_day_off', false)
             ->orderByDesc('work_date')
             ->first();
 
-        // Keyingi kun
         $next = Schedule::where('user_id', $specialistId)
             ->where('work_date', '>', $currentSchedule->work_date)
             ->where('is_day_off', false)
@@ -236,7 +231,6 @@ class BookingService
             $bookingStart = Carbon::parse($booking->start_time);
             $bookingEnd = Carbon::parse($booking->end_time);
 
-            // Vaqt oralig'i kesishish tekshirish
             return $hour->lt($bookingEnd) && $blockEnd->gt($bookingStart);
         });
     }
@@ -249,14 +243,12 @@ class BookingService
         $startTime = Carbon::parse($time);
         $endTime = $startTime->copy()->addMinutes($service->duration_minutes);
 
-        // Dam olish vaqti tekshirish
         $breaks = ScheduleBreak::where('schedule_id', $scheduleId)->get();
         if ($this->isBreakTime($startTime, $breaks)) {
             $this->sendMessage($chatId, '❌ Bu vaqt dam olish vaqti. Iltimos boshqa vaqt tanlang.');
             return;
         }
 
-        // Mavjud bronni tekshirish
         $existingBooking = Booking::where('schedule_id', $scheduleId)
             ->where(function ($query) use ($startTime, $endTime) {
                 $query->where(function ($q) use ($startTime, $endTime) {
@@ -271,11 +263,9 @@ class BookingService
             return;
         }
 
-        // Client yaratish yoki topish
         $client = $this->findOrCreateClient($chatId);
 
-        // Yangi bron yaratish
-        Booking::create([
+        $booking = Booking::create([
             'user_id' => $schedule->user_id,
             'client_id' => $client->id,
             'service_id' => $serviceId,
@@ -285,27 +275,60 @@ class BookingService
             'status' => 'pending',
         ]);
 
+        // Specialistga Filament notification yuborish
+        $specialist = \App\Models\User::find($schedule->user_id);
+        if ($specialist) {
+            Notification::make()
+                ->title('Yangi bron yaratildi')
+                ->body("
+                    Клиент: {$client->full_name}\n
+                    Услуга: {$service->name}\n
+                    Дата: {$schedule->work_date->format('d.m.Y')}\n
+                    Время: {$startTime->format('H:i')} - {$endTime->format('H:i')}\n
+                    Статус: В ожидании
+                ")
+                ->actions([
+                    \Filament\Notifications\Actions\Action::make('view')
+                        ->label('Просмотреть')
+                        ->url(route('filament.admin.resources.bookings.view', $booking))
+                        ->button(),
+                ])
+                ->success()
+                ->sendToDatabase($specialist);
+
+            Log::info('Filament notification sent to specialist', [
+                'booking_id' => $booking->id,
+                'specialist_id' => $specialist->id,
+            ]);
+
+            Log::info('Attempting to send notification to specialist', ['specialist_id' => $specialist->id]);
+        } else {
+            Log::warning('Specialist not found for booking ID: ' . $booking->id);
+        }
+
+        // Foydalanuvchiga Telegram xabari
         $this->sendMessage(
             $chatId,
             "✅ Broningiz muvaffaqiyatli yaratildi!\n\n" .
                 "📅 Sana: " . $schedule->work_date->format('Y-m-d') . "\n" .
                 "⏰ Vaqt: " . $startTime->format('H:i') . " - " . $endTime->format('H:i') . "\n" .
                 "🔧 Xizmat: " . $service->name . "\n" .
-                "⏳ Status: Kutilmoqda"
+                "⏳ Status: Kutilmoqda\n\n" .
+                "Specialist tez orada sizning bronlashingizni ko'rib chiqadi."
         );
+
+        // Observer avtomatik ishlaydi (created event uchun)
     }
 
     private function findOrCreateClient(int $chatId)
     {
-        // Avval telegram_id bo'yicha qidirish
         $client = \App\Models\Client::where('telegram_id', $chatId)->first();
 
         if (!$client) {
-            // Yangi client yaratish
             $client = \App\Models\Client::create([
                 'telegram_id' => $chatId,
-                'name' => 'Telegram User ' . $chatId, // default name
-                'phone' => null, // keyinroq to'ldirilishi mumkin
+                'name' => 'Telegram User ' . $chatId,
+                'phone' => null,
             ]);
         }
 

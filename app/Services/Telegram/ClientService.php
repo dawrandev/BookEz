@@ -41,7 +41,13 @@ class ClientService
                 'phone' => $phone
             ]);
 
-            $this->sendMessage($chatId, 'Siz tabıslı dizimnen óttińiz');
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => '✅Siz tabıslı dizimnen óttińiz',
+                'reply_markup' => json_encode([
+                    'remove_keyboard' => true
+                ])
+            ]);
 
             $this->clearRegistrationCache($chatId);
 

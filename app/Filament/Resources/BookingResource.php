@@ -32,7 +32,6 @@ class BookingResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
-    // Current user ga tegishli bookinglarni filtirlash
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
@@ -54,8 +53,8 @@ class BookingResource extends Resource
                                 ->reactive()
                                 ->searchable()
                                 ->preload()
-                                ->default(auth()->id()) // Default qilib current user ni qo'yish
-                                ->disabled(), // Faqat o'qish uchun
+                                ->default(auth()->id())
+                                ->disabled(),
 
                             Forms\Components\Select::make('client_id')
                                 ->label('Клиент')
@@ -80,7 +79,6 @@ class BookingResource extends Resource
                             Forms\Components\Select::make('service_id')
                                 ->label('Услуга')
                                 ->options(function (callable $get) {
-                                    // Faqat current user ning xizmatlarini ko'rsatish
                                     return Service::where('user_id', auth()->id())
                                         ->where('status', 'active')
                                         ->pluck('name', 'id');
@@ -92,7 +90,6 @@ class BookingResource extends Resource
                             Forms\Components\Select::make('schedule_id')
                                 ->label('График работы')
                                 ->options(function (callable $get) {
-                                    // Faqat current user ning schedulelarini ko'rsatish
                                     return Schedule::where('user_id', auth()->id())
                                         ->where('is_day_off', false)
                                         ->where('work_date', '>=', now()->toDateString())
@@ -163,14 +160,6 @@ class BookingResource extends Resource
                     ->searchable()
                     ->sortable()
                     ->weight('medium'),
-
-                // User ustunini yashirish chunki barcha recordlar current userniki
-                // Tables\Columns\TextColumn::make('user.name')
-                //     ->label('Специалист')
-                //     ->searchable()
-                //     ->sortable()
-                //     ->badge()
-                //     ->color('primary'),
 
                 Tables\Columns\TextColumn::make('service.name')
                     ->label('Услуга')
@@ -248,12 +237,6 @@ class BookingResource extends Resource
                         'completed' => 'Завершено',
                     ]),
 
-                // User filtirini olib tashlash chunki faqat current user ning bookings ko'rsatiladi
-                // SelectFilter::make('user_id')
-                //     ->label('Специалист')
-                //     ->options(User::whereHas('services')->pluck('name', 'id'))
-                //     ->searchable(),
-
                 Filter::make('work_date')
                     ->label('Дата работы')
                     ->form([
@@ -297,16 +280,28 @@ class BookingResource extends Resource
                     ->label('Подтвердить')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
-                    ->action(fn(Booking $record) => $record->update(['status' => 'confirmed']))
+                    ->action(function (Booking $record) {
+                        $record->status = 'confirmed';
+                        $record->save(); // Eloquent orqali save, observerni trigger qiladi
+                    })
                     ->visible(fn(Booking $record) => $record->status === 'pending')
-                    ->requiresConfirmation(),
+                    ->requiresConfirmation()
+                    ->after(function () {
+                        return redirect()->route('filament.admin.resources.bookings.index');
+                    }),
                 Tables\Actions\Action::make('cancel')
                     ->label('Отменить')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->action(fn(Booking $record) => $record->update(['status' => 'canceled']))
+                    ->action(function (Booking $record) {
+                        $record->status = 'canceled';
+                        $record->save(); // Eloquent orqali save, observerni trigger qiladi
+                    })
                     ->visible(fn(Booking $record) => in_array($record->status, ['pending', 'confirmed']))
-                    ->requiresConfirmation(),
+                    ->requiresConfirmation()
+                    ->after(function () {
+                        return redirect()->route('filament.admin.resources.bookings.index');
+                    }),
                 Tables\Actions\DeleteAction::make()
                     ->label('Удалить'),
             ])
@@ -316,20 +311,30 @@ class BookingResource extends Resource
                         ->label('Подтвердить выбранные')
                         ->icon('heroicon-o-check-circle')
                         ->color('success')
-                        ->action(fn($records) => $records->each->update(['status' => 'confirmed']))
+                        ->action(function ($records) {
+                            $records->each(function ($record) {
+                                $record->status = 'confirmed';
+                                $record->save(); // Har bir recordni alohida save qilish
+                            });
+                        })
                         ->requiresConfirmation(),
                     Tables\Actions\BulkAction::make('cancel')
                         ->label('Отменить выбранные')
                         ->icon('heroicon-o-x-circle')
                         ->color('danger')
-                        ->action(fn($records) => $records->each->update(['status' => 'canceled']))
+                        ->action(function ($records) {
+                            $records->each(function ($record) {
+                                $record->status = 'canceled';
+                                $record->save(); // Har bir recordni alohida save qilish
+                            });
+                        })
                         ->requiresConfirmation(),
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('Удалить выбранные'),
                 ])
             ])
             ->defaultSort('created_at', 'desc')
-            ->poll('30s') // автообновление каждые 30 секунд
+            ->poll('30s')
             ->striped()
             ->emptyStateHeading('Нет бронирований')
             ->emptyStateDescription('Бронирования появятся здесь после их создания')
@@ -346,7 +351,6 @@ class BookingResource extends Resource
         ];
     }
 
-    // Navigation badgeda faqat current user ning pending bookinglarini ko'rsatish
     public static function getNavigationBadge(): ?string
     {
         return static::getModel()::where('user_id', auth()->id())

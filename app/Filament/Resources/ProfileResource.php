@@ -41,32 +41,78 @@ class ProfileResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            TextInput::make('name')
-                ->label('Имя')
-                ->required()
-                ->maxLength(255),
 
-            TextInput::make('login')
-                ->label('Логин')
-                ->required()
-                ->unique(User::class, 'login', ignoreRecord: true)
-                ->maxLength(255),
+            Forms\Components\Section::make('Основная информация')
+                ->description('Ваши личные данные и фото')
+                ->schema([
+                    Forms\Components\FileUpload::make('photo')
+                        ->label('Фото')
+                        ->image()
+                        ->directory('users/photos')
+                        ->nullable()
+                        ->avatar()
+                        ->imageEditor()
+                        ->imageEditorAspectRatios(['1:1']),
 
-            TextInput::make('phone')
-                ->label('Телефон')
-                ->tel()
-                ->nullable()
-                ->maxLength(20),
+                    Forms\Components\Grid::make(2)
+                        ->schema([
+                            TextInput::make('name')
+                                ->label('Имя')
+                                ->required()
+                                ->maxLength(255),
 
-            TextInput::make('password')
-                ->label('Новый пароль')
-                ->password()
-                ->dehydrateStateUsing(fn($state) => !empty($state) ? bcrypt($state) : null)
-                ->dehydrated(fn($state) => filled($state))
-                ->nullable()
-                ->helperText('Оставьте пустым, если не хотите менять пароль'),
+                            TextInput::make('login')
+                                ->label('Логин')
+                                ->required()
+                                ->unique(User::class, 'login', ignoreRecord: true)
+                                ->maxLength(255),
+                        ]),
+
+                    Forms\Components\TextInput::make('phone')
+                        ->label('Телефон')
+                        ->tel()
+                        ->mask('+99999999999')
+                        ->placeholder('+998901234567')
+                        ->maxLength(20),
+                ])
+                ->columns(2)
+                ->collapsible(),
+
+            Forms\Components\Section::make('Безопасность')
+                ->description('Измените пароль при необходимости')
+                ->schema([
+                    TextInput::make('password')
+                        ->label('Новый пароль')
+                        ->password()
+                        ->dehydrateStateUsing(fn($state) => !empty($state) ? bcrypt($state) : null)
+                        ->dehydrated(fn($state) => filled($state))
+                        ->nullable()
+                        ->helperText('Оставьте пустым, если не хотите менять пароль'),
+                ])
+                ->collapsible(),
+
+            Forms\Components\Section::make('Дополнительно')
+                ->schema([
+                    Forms\Components\Textarea::make('description')
+                        ->label('Описание')
+                        ->rows(4)
+                        ->placeholder('Кратко расскажите о себе...')
+                        ->nullable(),
+
+                    Forms\Components\Select::make('status')
+                        ->label('Статус')
+                        ->options([
+                            'active' => 'Активный',
+                            'inactive' => 'Неактивный',
+                        ])
+                        ->default('active')
+                        ->required(),
+                ])
+                ->columns(1)
+                ->collapsible(),
         ]);
     }
+
 
 
     public static function table(Table $table): Table

@@ -5,6 +5,10 @@ namespace App\Providers;
 use App\Commands\Telegram\FallbackCommand;
 use App\Commands\Telegram\HelpCommand;
 use App\Commands\Telegram\StartCommand;
+use App\Models\Booking;
+use App\Notifications\TelegramNotificationService; // To'g'ri namespace
+use App\Observers\BookingObserver;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
@@ -15,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(TelegramNotificationService::class);
     }
 
     /**
@@ -28,5 +32,8 @@ class AppServiceProvider extends ServiceProvider
             HelpCommand::class,
             FallbackCommand::class
         ]);
+
+        Booking::observe(BookingObserver::class);
+        Log::info('BookingObserver registered');
     }
 }

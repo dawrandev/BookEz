@@ -13,6 +13,10 @@ class UserPolicy
         if ($user->hasRole('admin')) {
             return true;
         }
+
+        if ($user->hasRole('specialist') && in_array($ability, ['viewAny', 'view', 'update'])) {
+            return true;
+        }
     }
     /**
      * Determine whether the user can view any models.

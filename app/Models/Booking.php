@@ -14,7 +14,9 @@ class Booking extends Model
         'schedule_id',
         'booking_date',
         'start_time',
-        'end_time'
+        'end_time',
+        'status',
+        'notes'
     ];
 
     public function user()

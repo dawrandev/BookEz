@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('schedule_breaks', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('schedule_id')->constrained()->cascadeOnDelete();
-            $table->time('start_time');
-            $table->time('end_time');
-            $table->string('reason')->nullable();
+        Schema::create('notifications', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('type');
+            $table->morphs('notifiable');
+            $table->text('data');
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('schedule_breaks');
+        Schema::dropIfExists('notifications');
     }
 };
