@@ -4,6 +4,8 @@ namespace App\Services\Telegram;
 
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use Telegram\Bot\FileUpload\InputFile;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
 class UserService
@@ -86,30 +88,51 @@ class UserService
 
     public function showSpecialistDetails(int $chatId, User $specialist): void
     {
-        $text = "👨‍⚕️ Specialist haqqında:\n\n"
-            . "📝 Atı: {$specialist->name}\n"
-            . "📞 Telefon: " . ($specialist->phone ?? 'joq') . "\n"
-            . "ℹ️ Tavsif: " . ($specialist->description ?? 'kiritilmegen');
+        $text = "👨‍⚕️: <b>{$specialist->name}</b>\n"
+            . "<b>{$specialist->category->name}</b>\n"
+            . "📞: " . ($specialist->phone ?? 'kiritilmegen') . "\n"
+            . "ℹ️: " . ($specialist->description ?? 'kiritilmegen');
 
-        $keyboards = json_encode([
+        $replyMarkup = json_encode([
             'inline_keyboard' => [
                 [
-                    ['text' => '➕Bron qılıw', 'callback_data' => "specialist_services_{$specialist->id}"]
+                    ['text' => '➕ Bron qılıw', 'callback_data' => "specialist_services_{$specialist->id}"]
                 ],
                 [
-                    ['text' => '📖Bronlardı kóriw', 'callback_data' => "specialist_bookings_{$specialist->id}"],
-                    ['text' => '📍Lokatsiya', 'callback_data' => "specialist_{$specialist->id}"]
+                    ['text' => '📖 Bronlardı kóriw', 'callback_data' => "specialist_bookings_{$specialist->id}"],
+                    ['text' => '📍 Lokatsiya', 'callback_data' => "specialist_location_{$specialist->id}"]
                 ],
                 [
-                    ['text' => '🔙Artqa', 'callback_data' => "specialists"]
-                ]
-            ]
+                    ['text' => '🔙 Artqa', 'callback_data' => "specialists"]
+                ],
+            ],
         ]);
 
+        if ($specialist->photo) {
+            if (Storage::disk('public')->exists($specialist->photo)) {
+                $absPath = Storage::disk('public')->path($specialist->photo);
+                $photo   = InputFile::create($absPath, basename($absPath));
+            } else {
+                $publicUrl = url('storage/' . $specialist->photo);
+                $photo     = InputFile::create($publicUrl, basename($specialist->photo));
+            }
+
+            Telegram::sendPhoto([
+                'chat_id'      => $chatId,
+                'photo'        => $photo,
+                'caption'      => $text,
+                'reply_markup' => $replyMarkup,
+                'parse_mode'   => 'HTML',
+            ]);
+
+            return;
+        }
+
         Telegram::sendMessage([
-            'text' => $text,
-            'chat_id' => $chatId,
-            'reply_markup' => $keyboards
+            'chat_id'      => $chatId,
+            'text'         => $text,
+            'reply_markup' => $replyMarkup,
+            'parse_mode'   => 'HTML',
         ]);
     }
 

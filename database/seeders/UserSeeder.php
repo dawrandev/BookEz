@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
             'phone' => '+998911233212',
             'password' => Hash::make('meyirimov'),
             'category_id' => 1,
-            'description' => 'Lorem ipsum dolor sit amet consectetur, adipisicing elit. Nostrum pariatur, dolor magnam mollitia sunt eos voluptatibus? Perferendis, deserunt, iusto explicabo saepe repellat quae libero neque, magni labore voluptate ducimus exercitationem.',
+            'description' => 'Men 3 jıldan aslam tájiriybege ie professional stilistpen. Shash turmagi, make-up hám imidj jaratıwda kóplegen klientlerim menen isleskenmen.',
             'status' => 'active'
         ])->assignRole('specialist');
 

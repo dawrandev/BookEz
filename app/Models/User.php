@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -26,7 +27,8 @@ class User extends Authenticatable
         'password',
         'category_id',
         'description',
-        'status'
+        'status',
+        'location'
     ];
 
     /**
@@ -51,6 +53,10 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    protected $casts = [
+        'location' => 'array',
+    ];
 
     protected static function boot()
     {
@@ -79,5 +85,21 @@ class User extends Authenticatable
     public function bookings()
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function getPhotoUrlAttribute()
+    {
+        if ($this->photo) {
+            return Storage::url($this->photo);
+        }
+        return null;
+    }
+
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->photo) {
+            return Storage::url($this->photo);
+        }
+        return asset('images/default-avatar.png');
     }
 }

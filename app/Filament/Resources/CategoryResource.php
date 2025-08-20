@@ -27,6 +27,12 @@ class CategoryResource extends Resource
 
     protected static ?string $navigationLabel = 'Категории';
 
+    protected static ?string $pluralLabel = 'Категории';
+
+    protected static ?string $pluralLabelSingular = 'Категория';
+
+
+
 
 
     public static function form(Form $form): Form
@@ -43,12 +49,6 @@ class CategoryResource extends Resource
                             ->maxLength(50)
                             ->required()
                             ->columnSpanFull(),
-
-                        TextInput::make('icon')
-                            ->label('Иконка')
-                            ->placeholder('Например: heroicon-o-tag')
-                            ->maxLength(50)
-                            ->columnSpanFull()
                     ])
                     ->collapsible(),
             ]);
@@ -65,7 +65,6 @@ class CategoryResource extends Resource
                     ->label('Название')
                     ->sortable()
                     ->searchable()
-                    ->icon(fn($record) => $record->icon)
                     ->weight('bold')
                     ->tooltip(fn($record) => 'Категория: ' . $record->name),
             ])

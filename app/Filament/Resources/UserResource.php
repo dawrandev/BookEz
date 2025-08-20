@@ -15,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -75,8 +76,8 @@ class UserResource extends Resource
                     ->label('Пароль')
                     ->password()
                     ->maxLength(255)
-                    ->required(fn($livewire) => $livewire instanceof Pages\CreateUser) // create sahifada required
-                    ->dehydrated(fn($state) => filled($state)) // bo‘sh bo‘lsa update qilmaydi
+                    ->required(fn($livewire) => $livewire instanceof Pages\CreateUser)
+                    ->dehydrated(fn($state) => filled($state))
                     ->afterStateHydrated(fn($component, $state, $record) => $component->state(null))
             ]);
     }
@@ -86,6 +87,7 @@ class UserResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('index')->label('№')->rowIndex(),
+                ImageColumn::make('photo')->label('Фото')->circular()->size(60),
                 TextColumn::make('category.name')->label('Категория')->sortable()->searchable(),
                 TextColumn::make('name')->label('Имя')->sortable()->searchable(),
                 TextColumn::make('login')->label('Логин')->sortable()->searchable(),

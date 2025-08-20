@@ -2,19 +2,18 @@
 
 namespace App\Filament\Resources;
 
+use Afsakar\LeafletMapPicker\Facades\LeafletMapPicker;
 use App\Filament\Resources\ProfileResource\Pages;
-use App\Filament\Resources\ProfileResource\RelationManagers;
 use App\Models\User;
+use App\Models\Category;
 use Filament\Forms;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Hash;
 
 class ProfileResource extends Resource
 {
@@ -26,112 +25,216 @@ class ProfileResource extends Resource
 
     protected static ?string $modelLabel = 'Профиль';
 
-    protected static bool $shouldRegisterNavigation = true;
-
-    public static function canViewAny(): bool
-    {
-        return  Auth::user()->hasRole('specialist');
-    }
-
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()->where('id', auth()->id());
-    }
+    protected static ?string $pluralModelLabel = 'Профили';
 
     public static function form(Form $form): Form
     {
-        return $form->schema([
+        return $form
+            ->schema([
+                Forms\Components\Section::make('Основная информация')
+                    ->description('Ваши личные данные и настройки профиля')
+                    ->icon('heroicon-o-user')
+                    ->schema([
+                        Forms\Components\Grid::make()
+                            ->schema([
+                                Forms\Components\FileUpload::make('photo')
+                                    ->label('Фото профиля')
+                                    ->image()
+                                    ->directory('profile-photos')
+                                    ->disk('public')
+                                    ->visibility('public')
+                                    ->imageEditor()
+                                    ->circleCropper()
+                                    ->maxSize(2048)
+                                    ->acceptedFileTypes(['image/jpeg', 'image/png'])
+                                    ->helperText('Загрузите фото размером до 2MB (JPG, PNG)')
+                                    ->columnSpan(1),
 
-            Forms\Components\Section::make('Основная информация')
-                ->description('Ваши личные данные и фото')
-                ->schema([
-                    Forms\Components\FileUpload::make('photo')
-                        ->label('Фото')
-                        ->image()
-                        ->directory('users/photos')
-                        ->nullable()
-                        ->avatar()
-                        ->imageEditor()
-                        ->imageEditorAspectRatios(['1:1']),
+                                Forms\Components\Grid::make()
+                                    ->schema([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Полное имя')
+                                            ->required()
+                                            ->maxLength(255)
+                                            ->prefixIcon('heroicon-o-user'),
 
-                    Forms\Components\Grid::make(2)
-                        ->schema([
-                            TextInput::make('name')
-                                ->label('Имя')
-                                ->required()
-                                ->maxLength(255),
+                                        Forms\Components\TextInput::make('login')
+                                            ->label('Логин')
+                                            ->required()
+                                            ->unique(ignoreRecord: true)
+                                            ->maxLength(255)
+                                            ->prefixIcon('heroicon-o-at-symbol'),
 
-                            TextInput::make('login')
-                                ->label('Логин')
-                                ->required()
-                                ->unique(User::class, 'login', ignoreRecord: true)
-                                ->maxLength(255),
-                        ]),
+                                        Forms\Components\TextInput::make('phone')
+                                            ->label('Номер телефона')
+                                            ->tel()
+                                            ->maxLength(255)
+                                            ->prefixIcon('heroicon-o-phone')
+                                            ->placeholder('+998 XX XXX XX XX'),
+                                    ])
+                                    ->columnSpan(1),
+                            ])
+                            ->columns(2),
 
-                    Forms\Components\TextInput::make('phone')
-                        ->label('Телефон')
-                        ->tel()
-                        ->mask('+99999999999')
-                        ->placeholder('+998901234567')
-                        ->maxLength(20),
-                ])
-                ->columns(2)
-                ->collapsible(),
+                        Forms\Components\Textarea::make('description')
+                            ->label('Описание')
+                            ->placeholder('Расскажите о себе...')
+                            ->rows(4)
+                            ->maxLength(65535)
+                            ->columnSpanFull(),
+                    ]),
 
-            Forms\Components\Section::make('Безопасность')
-                ->description('Измените пароль при необходимости')
-                ->schema([
-                    TextInput::make('password')
-                        ->label('Новый пароль')
-                        ->password()
-                        ->dehydrateStateUsing(fn($state) => !empty($state) ? bcrypt($state) : null)
-                        ->dehydrated(fn($state) => filled($state))
-                        ->nullable()
-                        ->helperText('Оставьте пустым, если не хотите менять пароль'),
-                ])
-                ->collapsible(),
+                Forms\Components\Section::make('Информация системы')
+                    ->description('Информация, управляемая администратором')
+                    ->icon('heroicon-o-information-circle')
+                    ->schema([
+                        Forms\Components\Section::make('Локация')
+                            ->description('Ваше текущее местоположение')
+                            ->icon('heroicon-o-map')
+                            ->schema([
+                                // Solution 1: Try without Facade
+                                LeafletMapPicker::make('location')
+                                    ->label('Местоположение')
+                                    ->height('500px')
+                                    ->defaultLocation([41.0082, 28.9784]) // Istanbul coordinates
+                                    ->defaultZoom(15)
+                                    ->draggable() // default true
+                                    ->clickable() // default true
+                                    ->myLocationButtonLabel('Перейти к моему местоположению')
+                                    ->hideTileControl()
+                                    ->readOnly(false) // default false
+                                    ->tileProvider('openstreetmap') // default options
+                                    ->customMarker([
+                                        'iconUrl' => asset('pin-2.png'),
+                                        'iconSize' => [38, 38],
+                                        'iconAnchor' => [19, 38],
+                                        'popupAnchor' => [0, -38]
+                                    ])
+                                    ->columnSpanFull(),
+                            ]),
+                        Forms\Components\Grid::make()
+                            ->schema([
+                                Forms\Components\Placeholder::make('status_display')
+                                    ->label('Статус аккаунта')
+                                    ->content(
+                                        fn(?User $record): string =>
+                                        $record ? match ($record->status) {
+                                            'active' => '🟢 Активный',
+                                            'inactive' => '🔴 Неактивный',
+                                            default => '⚪ Неизвестно'
+                                        } : '⚪ Неизвестно'
+                                    ),
 
-            Forms\Components\Section::make('Дополнительно')
-                ->schema([
-                    Forms\Components\Textarea::make('description')
-                        ->label('Описание')
-                        ->rows(4)
-                        ->placeholder('Кратко расскажите о себе...')
-                        ->nullable(),
+                                Forms\Components\Placeholder::make('category_display')
+                                    ->label('Категория')
+                                    ->content(
+                                        fn(?User $record): string =>
+                                        $record?->category?->name ?? 'Не указана'
+                                    ),
+                            ])
+                            ->columns(2),
+                    ]),
 
-                    Forms\Components\Select::make('status')
-                        ->label('Статус')
-                        ->options([
-                            'active' => 'Активный',
-                            'inactive' => 'Неактивный',
-                        ])
-                        ->default('active')
-                        ->required(),
-                ])
-                ->columns(1)
-                ->collapsible(),
-        ]);
+                Forms\Components\Section::make('Безопасность')
+                    ->description('Изменение пароля')
+                    ->icon('heroicon-o-lock-closed')
+                    ->schema([
+                        Forms\Components\TextInput::make('password')
+                            ->label('Новый пароль')
+                            ->password()
+                            ->dehydrated(false)
+                            ->helperText('Оставьте пустым, чтобы сохранить текущий пароль')
+                            ->minLength(8)
+                            ->prefixIcon('heroicon-o-key')
+                            ->placeholder('Введите новый пароль...'),
+                    ])
+                    ->collapsible()
+                    ->collapsed(),
+            ]);
     }
-
-
 
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn(Builder $query) => $query->where('id', Auth::id()))
             ->columns([
-                //
+                Tables\Columns\ImageColumn::make('photo')
+                    ->label('Фото')
+                    ->circular()
+                    ->size(60)
+                    ->defaultImageUrl(fn(): string => 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name ?? 'User') . '&color=7F9CF5&background=EBF4FF'),
+
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Имя')
+                    ->weight('bold')
+                    ->searchable()
+                    ->icon('heroicon-o-user'),
+
+                Tables\Columns\TextColumn::make('login')
+                    ->label('Логин')
+                    ->searchable()
+                    ->icon('heroicon-o-at-symbol')
+                    ->copyable()
+                    ->copyMessage('Логин скопирован!')
+                    ->copyMessageDuration(1500),
+
+                Tables\Columns\TextColumn::make('phone')
+                    ->label('Телефон')
+                    ->searchable()
+                    ->icon('heroicon-o-phone')
+                    ->copyable()
+                    ->copyMessage('Телефон скопирован!')
+                    ->copyMessageDuration(1500),
+
+                Tables\Columns\TextColumn::make('category.name')
+                    ->label('Категория')
+                    ->badge()
+                    ->color('primary')
+                    ->icon('heroicon-o-tag'),
+
+                Tables\Columns\BadgeColumn::make('status')
+                    ->label('Статус')
+                    ->colors([
+                        'success' => 'active',
+                        'danger' => 'inactive',
+                    ])
+                    ->icons([
+                        'success' => 'heroicon-o-check-circle',
+                        'danger' => 'heroicon-o-x-circle',
+                    ])
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'active' => 'Активный',
+                        'inactive' => 'Неактивный',
+                        default => $state,
+                    }),
+
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Создан')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable()
+                    ->icon('heroicon-o-calendar')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->label('Редактировать')
+                    ->icon('heroicon-o-pencil')
+                    ->color('primary'),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+                // Bulk actions удалены, так как видно только свой профиль
+            ])
+            ->emptyStateHeading('Профиль не найден')
+            ->emptyStateDescription('Не удалось загрузить информацию о профиле')
+            ->emptyStateIcon('heroicon-o-user-circle');
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->where('id', Auth::id());
     }
 
     public static function getRelations(): array
@@ -149,13 +252,24 @@ class ProfileResource extends Resource
         ];
     }
 
-    public static function getNavigationUrl(): string
+    // Можно просматривать только свой профиль
+    public static function canCreate(): bool
     {
-        $user = auth()->user();
-        if ($user) {
-            return static::getUrl('edit', ['record' => $user->id]);
-        }
+        return false;
+    }
 
-        return '/admin';
+    public static function canDelete($record): bool
+    {
+        return false;
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return false;
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return null;
     }
 }

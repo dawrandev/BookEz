@@ -15,8 +15,7 @@ class CategorySeeder extends Seeder
     {
         $categories = [
             [
-                'name' => 'Стилист',
-                'icon' => 'heroicon-o-scissors'
+                'name' => '✂️Стилист',
             ]
         ];
 

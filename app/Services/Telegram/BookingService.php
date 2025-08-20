@@ -316,8 +316,6 @@ class BookingService
                 "⏳ Status: Kutilmoqda\n\n" .
                 "Specialist tez orada sizning bronlashingizni ko'rib chiqadi."
         );
-
-        // Observer avtomatik ishlaydi (created event uchun)
     }
 
     private function findOrCreateClient(int $chatId)

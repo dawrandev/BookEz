@@ -71,9 +71,14 @@ class ServiceResource extends Resource
         $user = Auth::user();
 
         $columns = [
-            Tables\Columns\TextColumn::make('id')
-                ->label('ID')
+            Tables\Columns\TextColumn::make('index')
+                ->label('№')
+                ->rowIndex()
                 ->sortable(),
+
+            Tables\Columns\ImageColumn::make('user.photo')
+                ->label('Фото')
+                ->circular(),
 
             Tables\Columns\TextColumn::make('name')
                 ->label('Название услуги')
@@ -109,7 +114,7 @@ class ServiceResource extends Resource
         ];
 
         if ($user && $user->hasRole('admin')) {
-            array_splice($columns, 1, 0, [
+            array_splice($columns, 2, 0, [
                 Tables\Columns\TextColumn::make('user.category.name')
                     ->label('Категория')
                     ->sortable()
