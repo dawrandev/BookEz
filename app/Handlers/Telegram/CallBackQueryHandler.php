@@ -6,6 +6,7 @@ use App\Services\Telegram\CategoryService;
 use App\Services\Telegram\SpecialistService;
 use App\Services\Telegram\UserService;
 use App\Services\Telegram\BookingService;
+use App\Services\Telegram\LocationService;
 use Telegram\Bot\Objects\CallbackQuery;
 
 class CallbackQueryHandler
@@ -14,7 +15,8 @@ class CallbackQueryHandler
         protected UserService $userService,
         protected CategoryService $categoryService,
         protected SpecialistService $specialistService,
-        protected BookingService $bookingService
+        protected BookingService $bookingService,
+        protected LocationService $locationService
     ) {}
 
     public function handle(CallbackQuery $callbackQuery): void
@@ -24,13 +26,14 @@ class CallbackQueryHandler
 
         $handlers = [
             'specialist_services_' => fn() => $this->handleSpecialistServiceCallback($chatId, $data),
-            'specialist_'          => fn() => $this->handleSpecialistCallback($chatId, $data),
-            'category_'             => fn() => $this->handleCategoryCallback($chatId, $data),
-            'service_'              => fn() => $this->handleServiceCallback($chatId, $data),
-            'book_'                 => fn() => $this->handleBookingCallback($chatId, $data),
-            'day_'                  => fn() => $this->handleScheduleDayCallback($chatId, $data),
-            'specialists'           => fn() => $this->userService->showSpecialists($chatId, $data),
-            'categories'            => fn() => $this->categoryService->showCategoriesToUser($chatId),
+            'specialist_location_' => fn() => $this->handleLocationCallback($chatId, $data), // ✅ Uzun prefix birinchi
+            'specialist_'          => fn() => $this->handleSpecialistCallback($chatId, $data),  // ✅ Qisqa prefix keyin
+            'category_'            => fn() => $this->handleCategoryCallback($chatId, $data),
+            'service_'             => fn() => $this->handleServiceCallback($chatId, $data),
+            'book_'                => fn() => $this->handleBookingCallback($chatId, $data),
+            'day_'                 => fn() => $this->handleScheduleDayCallback($chatId, $data),
+            'specialists'          => fn() => $this->userService->showSpecialists($chatId, $data),
+            'categories'           => fn() => $this->categoryService->showCategoriesToUser($chatId),
         ];
 
         foreach ($handlers as $prefix => $callback) {
@@ -59,7 +62,6 @@ class CallbackQueryHandler
         $this->specialistService->handleSpecialistServicesSection($chatId, $specialistId);
     }
 
-    // Service tugmasi bosilganda BookingService ishga tushadi
     private function handleServiceCallback(int $chatId, string $data): void
     {
         $serviceId = (int) substr($data, strlen('service_'));
@@ -68,10 +70,8 @@ class CallbackQueryHandler
         $this->bookingService->sendAvailableTimes($chatId, $specialistId, $serviceId);
     }
 
-    // Inline soat tugmasi bosilganda bron qilish
     private function handleBookingCallback(int $chatId, string $data): void
     {
-        // format: book_{scheduleId}_{serviceId}_{time}
         $parts = explode('_', $data);
         if (count($parts) < 4) return;
 
@@ -79,7 +79,6 @@ class CallbackQueryHandler
         $this->bookingService->createBooking($chatId, (int)$scheduleId, (int)$serviceId, $time);
     }
 
-    // Pagination: keyingi/oldingi kun tugmalari
     private function handleScheduleDayCallback(int $chatId, string $data): void
     {
         // format: day_{work_date}_{serviceId}
@@ -95,5 +94,11 @@ class CallbackQueryHandler
     private function getSpecialistIdByService(int $serviceId): int
     {
         return \App\Models\Service::findOrFail($serviceId)->user_id;
+    }
+
+    private function handleLocationCallback(int $chatId, string $data): void
+    {
+        $specialistId = (int) substr($data, strlen('specialist_location_'));
+        $this->locationService->sendSpecialistLocation($chatId, $specialistId);
     }
 }

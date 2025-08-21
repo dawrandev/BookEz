@@ -42,6 +42,7 @@ class ClientResource extends Resource
                 TextColumn::make('username')->label('имя пользователя')->sortable()->searchable(),
                 TextColumn::make('full_name')->label('имя')->sortable()->searchable(),
                 TextColumn::make('phone')->label('телефон')->sortable()->searchable(),
+
             ])
             ->filters([
                 //

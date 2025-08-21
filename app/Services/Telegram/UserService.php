@@ -10,6 +10,11 @@ use Telegram\Bot\Laravel\Facades\Telegram;
 
 class UserService
 {
+    public function __construct(protected LocationService $locationService)
+    {
+        // 
+    }
+
     public function showSpecialists(int $chatId, string $data)
     {
         $categoryId = null;
@@ -139,6 +144,14 @@ class UserService
     public function getSpecialistById(int $specialistId): ?User
     {
         return User::where('id', $specialistId)->first();
+    }
+
+    public function handleSpecialistLocation(int $chatId, string $data): void
+    {
+        if (str_starts_with($data, 'specialist_location_')) {
+            $specialistId = (int) substr($data, strlen('specialist_location_'));
+            $this->locationService->sendSpecialistLocation($chatId, $specialistId);
+        }
     }
 
     private function sendMessage(int $chatId, string $text)

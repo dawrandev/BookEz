@@ -8,6 +8,7 @@ use App\Commands\Telegram\StartCommand;
 use App\Models\Booking;
 use App\Notifications\TelegramNotificationService; // To'g'ri namespace
 use App\Observers\BookingObserver;
+use App\Services\Telegram\LocationService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Telegram\Bot\Laravel\Facades\Telegram;
@@ -20,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(TelegramNotificationService::class);
+        $this->app->bind(LocationService::class);
     }
 
     /**
@@ -34,6 +36,5 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         Booking::observe(BookingObserver::class);
-        Log::info('BookingObserver registered');
     }
 }

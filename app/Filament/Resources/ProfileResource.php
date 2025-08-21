@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources;
 
-use Afsakar\LeafletMapPicker\Facades\LeafletMapPicker;
+use Afsakar\LeafletMapPicker\LeafletMapPicker;
 use App\Filament\Resources\ProfileResource\Pages;
 use App\Models\User;
 use App\Models\Category;
@@ -92,25 +92,13 @@ class ProfileResource extends Resource
                             ->description('Ваше текущее местоположение')
                             ->icon('heroicon-o-map')
                             ->schema([
-                                // Solution 1: Try without Facade
                                 LeafletMapPicker::make('location')
-                                    ->label('Местоположение')
-                                    ->height('500px')
-                                    ->defaultLocation([41.0082, 28.9784]) // Istanbul coordinates
-                                    ->defaultZoom(15)
-                                    ->draggable() // default true
-                                    ->clickable() // default true
-                                    ->myLocationButtonLabel('Перейти к моему местоположению')
-                                    ->hideTileControl()
-                                    ->readOnly(false) // default false
-                                    ->tileProvider('openstreetmap') // default options
-                                    ->customMarker([
-                                        'iconUrl' => asset('pin-2.png'),
-                                        'iconSize' => [38, 38],
-                                        'iconAnchor' => [19, 38],
-                                        'popupAnchor' => [0, -38]
-                                    ])
-                                    ->columnSpanFull(),
+                                    ->label('Location')
+                                    ->height('400px')
+                                    ->defaultLocation([42.4531, 59.6103])
+                                    ->defaultZoom(13)
+                                    ->draggable()
+                                    ->clickable(),
                             ]),
                         Forms\Components\Grid::make()
                             ->schema([
