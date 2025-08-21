@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Schedule;
 use App\Models\ScheduleBreak;
 use App\Models\Service;
+use App\Models\User;
 use App\Notifications\TelegramNotificationService;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -35,7 +36,7 @@ class BookingService
         }
 
         if (!$schedule) {
-            $this->sendMessage($chatId, "Bu mutaxassisda ish vaqtlari mavjud emas.");
+            $this->sendMessage($chatId, "Bul qániygede is waqtı kiritilmegen!");
             return;
         }
 
@@ -83,9 +84,9 @@ class BookingService
 
         $period = new CarbonPeriod($startTime, '1 hour', $endTime);
         $lines = [];
-        $lines[] = "🗓 Sana: " . $schedule->work_date->format('Y-m-d') . " (" . $this->getDayName($schedule->work_date) . ")";
-        $lines[] = "⏰ Ish vaqti: " . $startTime->format('H:i') . " - " . $endTime->format('H:i');
-        $lines[] = "🔧 Xizmat: " . $service->name . " (" . $duration . " daqiqa)";
+        $lines[] = "🗓 Sáne: " . $schedule->work_date->format('Y-m-d') . " (" . $this->getDayName($schedule->work_date) . ")";
+        $lines[] = "⏰ Jumıs waqtı: " . $startTime->format('H:i') . " - " . $endTime->format('H:i');
+        $lines[] = "🔧 Xizmet: " . $service->name . " (" . $duration . " minut)";
         $lines[] = "";
 
         foreach ($period as $hour) {
@@ -102,11 +103,11 @@ class BookingService
 
             if ($isBreakTime) {
                 $breakReason = $this->getBreakReason($hour, $breaks);
-                $statusText = "🍽️ " . ($breakReason ?: 'Dam olish');
+                $statusText = "💤 " . ($breakReason ?: 'Dem alıs');
             } elseif ($isBooked) {
-                $statusText = "❌ Bron qilingan";
+                $statusText = "❌ Bron qılınǵan";
             } else {
-                $statusText = "✅ Bo'sh";
+                $statusText = "✅ Bos";
             }
 
             $lines[] = $hour->format('H:i') . " - " . $statusText;
@@ -160,7 +161,7 @@ class BookingService
         }
 
         $keyboard[] = [
-            ['text' => '🔙 Xizmatlarga qaytish', 'callback_data' => "specialist_services_{$specialistId}"]
+            ['text' => '🔙 Xizmetler', 'callback_data' => "specialist_services_{$specialistId}"]
         ];
 
         return $keyboard;
@@ -245,7 +246,7 @@ class BookingService
 
         $breaks = ScheduleBreak::where('schedule_id', $scheduleId)->get();
         if ($this->isBreakTime($startTime, $breaks)) {
-            $this->sendMessage($chatId, '❌ Bu vaqt dam olish vaqti. Iltimos boshqa vaqt tanlang.');
+            $this->sendMessage($chatId, '❌ Bul waqıt dem alıs waqtı. Iltimas basqa waqıt tanlań.');
             return;
         }
 
@@ -259,7 +260,7 @@ class BookingService
             ->first();
 
         if ($existingBooking) {
-            $this->sendMessage($chatId, '❌ Bu vaqt allaqachon band. Iltimos boshqa vaqt tanlang.');
+            $this->sendMessage($chatId, '❌ Bu vaqt allaqachon band. Iltimas basqa waqıt tanlań.');
             return;
         }
 
@@ -275,11 +276,10 @@ class BookingService
             'status' => 'pending',
         ]);
 
-        // Specialistga Filament notification yuborish
-        $specialist = \App\Models\User::find($schedule->user_id);
+        $specialist = User::find($schedule->user_id);
         if ($specialist) {
             Notification::make()
-                ->title('Yangi bron yaratildi')
+                ->title('Jańa bron jaratıldı')
                 ->body("
                     Клиент: {$client->full_name}\n
                     Услуга: {$service->name}\n
@@ -305,17 +305,6 @@ class BookingService
         } else {
             Log::warning('Specialist not found for booking ID: ' . $booking->id);
         }
-
-        // Foydalanuvchiga Telegram xabari
-        $this->sendMessage(
-            $chatId,
-            "✅ Broningiz muvaffaqiyatli yaratildi!\n\n" .
-                "📅 Sana: " . $schedule->work_date->format('Y-m-d') . "\n" .
-                "⏰ Vaqt: " . $startTime->format('H:i') . " - " . $endTime->format('H:i') . "\n" .
-                "🔧 Xizmat: " . $service->name . "\n" .
-                "⏳ Status: Kutilmoqda\n\n" .
-                "Specialist tez orada sizning bronlashingizni ko'rib chiqadi."
-        );
     }
 
     private function findOrCreateClient(int $chatId)
@@ -336,13 +325,13 @@ class BookingService
     private function getDayName($date): string
     {
         $dayNames = [
-            'Monday' => 'Dushanba',
-            'Tuesday' => 'Seshanba',
-            'Wednesday' => 'Chorshanba',
-            'Thursday' => 'Payshanba',
-            'Friday' => 'Juma',
-            'Saturday' => 'Shanba',
-            'Sunday' => 'Yakshanba'
+            'Monday' => '1-kún',
+            'Tuesday' => '2-kún',
+            'Wednesday' => '3-kún',
+            'Thursday' => '4-kún',
+            'Friday' => '5-kún',
+            'Saturday' => '6-kún',
+            'Sunday' => '7-kún'
         ];
 
         return $dayNames[Carbon::parse($date)->format('l')] ?? Carbon::parse($date)->format('l');

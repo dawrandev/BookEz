@@ -14,7 +14,6 @@ class LocationService
         $specialist = $this->getSpecialistById($specialistId);
 
         if (!$specialist) {
-            Log::error("LocationService: Specialist topilmadi. ID: {$specialistId}");
             $this->sendMessage($chatId, "Specialist tabılmadı. ID: {$specialistId}");
             return;
         }
@@ -31,7 +30,7 @@ class LocationService
         }
 
         if (!isset($location['lat']) || !isset($location['lng'])) {
-            $this->sendMessage($chatId, 'Lokatsiya málimatleri nádúris');
+            $this->sendMessage($chatId, 'Lokatsiya maǵlıwmatları nadurıs');
             return;
         }
 
@@ -44,7 +43,7 @@ class LocationService
             $replyMarkup = json_encode([
                 'inline_keyboard' => [
                     [
-                        ['text' => '🔙 Specialist haqında', 'callback_data' => "specialist_{$specialist->id}"]
+                        ['text' => '🔙 Artqa', 'callback_data' => "specialist_{$specialist->id}"]
                     ]
                 ]
             ]);
@@ -55,12 +54,6 @@ class LocationService
                 'longitude' => $longitude,
                 'reply_markup' => $replyMarkup
             ]);
-
-            $locationText = "📍 <b>{$specialist->name}</b> ning lokatsiyası\n"
-                . "🏥 <b>{$specialist->category->name}</b>\n"
-                . "📞 " . ($specialist->phone ?? 'kiritilmegen');
-
-            $this->sendMessage($chatId, $locationText, 'HTML');
         } catch (Exception $e) {
             Log::error($e->getMessage());
         }

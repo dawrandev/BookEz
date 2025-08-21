@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Booking;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Laravel\Facades\Telegram;
@@ -26,19 +27,14 @@ class TelegramNotificationService
                 'text' => $message,
                 'parse_mode' => 'HTML'
             ]);
-
-            Log::info('Telegram API Response for created: ', ['response' => $response->toArray()]);
-            Log::info('Booking created telegram xabari yuborildi. Booking ID: ' . $booking->id . ' Chat ID: ' . $telegramId);
         } catch (Exception $e) {
-            Log::error('Booking created telegram xabarini yuborishda xatolik: ' . $e->getMessage() . ' - Booking ID: ' . $booking->id . ' - Chat ID: ' . $telegramId);
+            Log::error('Booking created error sending telegram message: ' . $e->getMessage() . ' - Booking ID: ' . $booking->id . ' - Chat ID: ' . $telegramId);
             Log::error('Error details: ', ['exception' => $e->getTraceAsString()]);
         }
     }
 
     public function sendStatusUpdate(Booking $booking): void
     {
-        Log::info('sendStatusUpdate called for Booking ID: ' . $booking->id);
-
         $telegramId = $booking->client->telegram_id;
 
         if (!$telegramId) {
@@ -54,11 +50,8 @@ class TelegramNotificationService
                 'text' => $message,
                 'parse_mode' => 'HTML'
             ]);
-
-            Log::info('Telegram API Response for status update: ', ['response' => $response->toArray()]);
-            Log::info('Status update telegram xabari yuborildi. Booking ID: ' . $booking->id . ' Chat ID: ' . $telegramId);
         } catch (Exception $e) {
-            Log::error('Status update telegram xabarini yuborishda xatolik: ' . $e->getMessage() . ' - Booking ID: ' . $booking->id . ' - Chat ID: ' . $telegramId);
+            Log::error('Status update error sending telegram message: ' . $e->getMessage() . ' - Booking ID: ' . $booking->id . ' - Chat ID: ' . $telegramId);
             Log::error('Error details: ', ['exception' => $e->getTraceAsString()]);
         }
     }
@@ -67,16 +60,20 @@ class TelegramNotificationService
     {
         $specialist = $booking->user->name;
         $service = $booking->service->name;
-        $date = $booking->schedule->work_date;
-        $time = $booking->start_time . ' - ' . $booking->end_time;
 
-        $message = "🎯 <b>Yangi bronlash yaratildi!</b>\n\n";
-        $message .= "👨‍💼 <b>Specialist:</b> {$specialist}\n";
-        $message .= "🔧 <b>Xizmat:</b> {$service}\n";
-        $message .= "📅 <b>Sana:</b> {$date}\n";
-        $message .= "⏰ <b>Vaqt:</b> {$time}\n";
-        $message .= "📊 <b>Holat:</b> ⏳ Kutilmoqda\n\n";
-        $message .= "Specialist tez orada sizning bronlashingizni tasdiqlaydi.";
+        $date = Carbon::parse($booking->schedule->work_date)->format('Y-m-d');
+
+        $start = Carbon::parse($booking->start_time)->format('H:i');
+        $end   = Carbon::parse($booking->end_time)->format('H:i');
+        $time = $start . ' - ' . $end;
+
+        $message = "🎯 <b>Bron jaratıldı!</b>\n\n";
+        $message .= "👨‍💼 <b>Qániyge:</b> {$specialist}\n";
+        $message .= "🔧 <b>Xizmet:</b> {$service}\n";
+        $message .= "📅 <b>Sáne:</b> {$date}\n";
+        $message .= "⏰ <b>Waqıt:</b> {$time}\n";
+        $message .= "📊 <b>Jaǵday:</b> ⏳ Kutilmoqda\n\n";
+        $message .= "Qániyge tez arada siziń bronıńızdı qabıl qıladı.";
 
         return $message;
     }
@@ -92,34 +89,37 @@ class TelegramNotificationService
         };
 
         $statusText = match ($booking->status) {
-            'confirmed' => 'Tasdiqlandi',
-            'canceled' => 'Bekor qilindi',
-            'completed' => 'Tugatildi',
-            'pending' => 'Kutilmoqda',
-            default => 'Noma\'lum'
+            'confirmed' => 'Tastıyıqlandı',
+            'canceled' => 'Biykar qılındı',
+            'completed' => 'Juwmaqlandı',
+            'pending' => 'Kútilmekte',
+            default => 'Belgisiz'
         };
 
         $specialist = $booking->user->name;
         $service = $booking->service->name;
-        $date = $booking->schedule->work_date;
-        $time = $booking->start_time . ' - ' . $booking->end_time;
 
-        $message = "{$statusEmoji} <b>Bronlash holati o'zgartirildi</b>\n\n";
-        $message .= "📊 <b>Holat:</b> {$statusText}\n";
-        $message .= "👨‍💼 <b>Specialist:</b> {$specialist}\n";
-        $message .= "🔧 <b>Xizmat:</b> {$service}\n";
-        $message .= "📅 <b>Sana:</b> {$date}\n";
-        $message .= "⏰ <b>Vaqt:</b> {$time}\n";
+        $date = Carbon::parse($booking->schedule->work_date)->format('Y-m-d');
+        $start = Carbon::parse($booking->start_time)->format('H:i');
+        $end   = Carbon::parse($booking->end_time)->format('H:i');
+        $time = $start . ' - ' . $end;
+
+        $message = "{$statusEmoji} <b>Bronlaw jaǵdayı ózgertildi</b>\n\n";
+        $message .= "📊 <b>Jaǵday:</b> {$statusText}\n";
+        $message .= "👨‍💼 <b>Qániyge:</b> {$specialist}\n";
+        $message .= "🔧 <b>Xizmet:</b> {$service}\n";
+        $message .= "📅 <b>Sáne:</b> {$date}\n";
+        $message .= "⏰ <b>Waqıt:</b> {$time}\n";
 
         if ($booking->status === 'confirmed') {
-            $message .= "\n💚 <b>Sizning bronlashingiz tasdiqlandi!</b>";
-            $message .= "\nIltimos belgilangan vaqtda keling.";
+            $message .= "\n💚 <b>Siziń bronıńız qabıllandı!</b>";
+            $message .= "\nIltimas waqtında keliń.";
         } elseif ($booking->status === 'canceled') {
-            $message .= "\n💔 <b>Bronlashingiz ma'lum sababga ko'ra bekor qilindi!</b>";
-            $message .= "\nBoshqa vaqt uchun bronlashingiz mumkin.";
+            $message .= "\n💔 <b>Bronıńız málim sebepke kóre biykarlandı!</b>";
+            $message .= "\nBasqa waqıt ushın bronlawıńız múmkin";
         } elseif ($booking->status === 'completed') {
-            $message .= "\n🎉 <b>Xizmat tugatildi</b>";
-            $message .= "\nRahmat!";
+            $message .= "\n🎉 <b>Xizmet juwmaqlandı</b>";
+            $message .= "\nRáxmet";
         }
 
         return $message;

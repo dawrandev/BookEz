@@ -7,6 +7,8 @@ use App\Services\Telegram\SpecialistService;
 use App\Services\Telegram\UserService;
 use App\Services\Telegram\BookingService;
 use App\Services\Telegram\LocationService;
+use App\Services\Telegram\BookingViewService; // ✅ Yangi service
+use App\Services\Telegram\ClientService;
 use Telegram\Bot\Objects\CallbackQuery;
 
 class CallbackQueryHandler
@@ -16,7 +18,9 @@ class CallbackQueryHandler
         protected CategoryService $categoryService,
         protected SpecialistService $specialistService,
         protected BookingService $bookingService,
-        protected LocationService $locationService
+        protected LocationService $locationService,
+        protected BookingViewService $bookingViewService,
+        protected ClientService $clientService
     ) {}
 
     public function handle(CallbackQuery $callbackQuery): void
@@ -25,15 +29,20 @@ class CallbackQueryHandler
         $chatId = $callbackQuery->getMessage()->getChat()->getId();
 
         $handlers = [
+            'my_bookings_'         => fn() => $this->handleMyBookingsCallback($chatId, $data),
+            'booking_detail_'      => fn() => $this->handleBookingDetailCallback($chatId, $data),
+            'cancel_booking_'      => fn() => $this->handleCancelBookingCallback($chatId, $data),
+
             'specialist_services_' => fn() => $this->handleSpecialistServiceCallback($chatId, $data),
-            'specialist_location_' => fn() => $this->handleLocationCallback($chatId, $data), // ✅ Uzun prefix birinchi
-            'specialist_'          => fn() => $this->handleSpecialistCallback($chatId, $data),  // ✅ Qisqa prefix keyin
+            'specialist_location_' => fn() => $this->handleLocationCallback($chatId, $data),
+            'specialist_'          => fn() => $this->handleSpecialistCallback($chatId, $data),
             'category_'            => fn() => $this->handleCategoryCallback($chatId, $data),
             'service_'             => fn() => $this->handleServiceCallback($chatId, $data),
             'book_'                => fn() => $this->handleBookingCallback($chatId, $data),
             'day_'                 => fn() => $this->handleScheduleDayCallback($chatId, $data),
             'specialists'          => fn() => $this->userService->showSpecialists($chatId, $data),
             'categories'           => fn() => $this->categoryService->showCategoriesToUser($chatId),
+            'main_menu'            => fn() => $this->handleMainMenuCallback($chatId),
         ];
 
         foreach ($handlers as $prefix => $callback) {
@@ -44,6 +53,31 @@ class CallbackQueryHandler
         }
     }
 
+    // ✅ Yangi callback handlerlar
+    private function handleMyBookingsCallback(int $chatId, string $data): void
+    {
+        $this->bookingViewService->showMyBookings($chatId);
+    }
+
+    private function handleBookingDetailCallback(int $chatId, string $data): void
+    {
+        $bookingId = (int) substr($data, strlen('booking_detail_'));
+        $this->bookingViewService->showBookingDetail($chatId, $bookingId);
+    }
+
+    private function handleCancelBookingCallback(int $chatId, string $data): void
+    {
+        $bookingId = (int) substr($data, strlen('cancel_booking_'));
+        $this->bookingViewService->cancelBooking($chatId, $bookingId);
+    }
+
+    private function handleMainMenuCallback(int $chatId): void
+    {
+        // Bosh sahifaga qaytish logic - UserService da yoki alohida method
+        $this->clientService->showMainMenu($chatId);
+    }
+
+    // Mavjud handlerlar o'zgarishsiz qoladi
     private function handleCategoryCallback(int $chatId, string $data): void
     {
         $categoryId = (int) substr($data, strlen('category_'));
@@ -81,7 +115,6 @@ class CallbackQueryHandler
 
     private function handleScheduleDayCallback(int $chatId, string $data): void
     {
-        // format: day_{work_date}_{serviceId}
         $parts = explode('_', $data);
         if (count($parts) < 3) return;
 

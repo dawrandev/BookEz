@@ -101,11 +101,11 @@ class UserService
         $replyMarkup = json_encode([
             'inline_keyboard' => [
                 [
-                    ['text' => '➕ Bron qılıw', 'callback_data' => "specialist_services_{$specialist->id}"]
+                    ['text' => '➕ Bron qılıw', 'callback_data' => "specialist_services_{$specialist->id}"],
+                    ['text' => '📍 Lokatsiya', 'callback_data' => "specialist_location_{$specialist->id}"]
                 ],
                 [
-                    ['text' => '📖 Bronlardı kóriw', 'callback_data' => "specialist_bookings_{$specialist->id}"],
-                    ['text' => '📍 Lokatsiya', 'callback_data' => "specialist_location_{$specialist->id}"]
+                    ['text' => '📖 Bronlardı kóriw', 'callback_data' => "my_bookings_{$specialist->id}"],
                 ],
                 [
                     ['text' => '🔙 Artqa', 'callback_data' => "specialists"]

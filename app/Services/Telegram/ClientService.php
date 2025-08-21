@@ -108,6 +108,8 @@ class ClientService
 
     public function showMainMenu(int $chatId)
     {
+        $client = Client::where('telegram_chat_id', $chatId)->first();
+
         $keyboard = json_encode([
             'inline_keyboard' => [
                 [
@@ -115,7 +117,7 @@ class ClientService
                     ['text' => '📂 Kategoriyalar', 'callback_data' => 'categories'],
                 ],
                 [
-                    ['text' => '📖Bronlarım', 'callback_data' => 'my_brons']
+                    ['text' => '📖Bronlarım', 'callback_data' => "my_bookings_{$client->id}"]
                 ]
             ]
 
