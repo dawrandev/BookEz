@@ -21,6 +21,7 @@ class UserService
         if (str_starts_with($data, 'specialists_')) {
             $categoryId = (int) substr($data, strlen('specialists_'));
         }
+        // ...
 
         $specialists = $this->getActiveSpecialists($categoryId);
 
@@ -103,9 +104,6 @@ class UserService
                 [
                     ['text' => '➕ Bron qılıw', 'callback_data' => "specialist_services_{$specialist->id}"],
                     ['text' => '📍 Lokatsiya', 'callback_data' => "specialist_location_{$specialist->id}"]
-                ],
-                [
-                    ['text' => '📖 Bronlardı kóriw', 'callback_data' => "my_bookings_{$specialist->id}"],
                 ],
                 [
                     ['text' => '🔙 Artqa', 'callback_data' => "specialists"]

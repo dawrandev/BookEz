@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Commands\Telegram\FallbackCommand;
 use App\Commands\Telegram\HelpCommand;
+use App\Commands\Telegram\MenuCommand;
 use App\Commands\Telegram\StartCommand;
 use App\Models\Booking;
 use App\Notifications\TelegramNotificationService; // To'g'ri namespace
@@ -32,7 +33,8 @@ class AppServiceProvider extends ServiceProvider
         Telegram::addCommands([
             StartCommand::class,
             HelpCommand::class,
-            FallbackCommand::class
+            FallbackCommand::class,
+            MenuCommand::class,
         ]);
 
         Booking::observe(BookingObserver::class);

@@ -28,15 +28,15 @@ class BookingViewService
                 END
             ")
             ->orderBy('created_at', 'desc')
-            ->limit(10) // Oxirgi 10 ta bron
+            ->limit(10)
             ->get();
 
         if ($bookings->isEmpty()) {
-            $this->sendMessage($chatId, "📋 Sizda hech qanday bron yo'q.\n\n🔍 Yangi bron qilish uchun /start buyrug'ini yuboring.");
+            $this->sendMessage($chatId, "📋 Sizde heshqanday bron joq.\n\n🔍 Bron jaratıw ushın /start buyruǵın beriń.");
             return;
         }
 
-        $text = "📖 Sizning bronlaringiz:\n\n";
+        $text = "📖 Siziń bronlarıńız:\n\n";
         $keyboard = [];
 
         foreach ($bookings as $index => $booking) {
@@ -52,11 +52,11 @@ class BookingViewService
 
             $text .= "━━━━━━━━━━━━━━━━━━━\n";
             $text .= "📋 Bron #" . ($index + 1) . "\n";
-            $text .= "👨‍⚕️ Mutaxassis: " . $specialist->name . "\n";
+            $text .= "👨‍⚕️ Qánige: " . $specialist->name . "\n";
             $text .= "🔧 Xizmet: " . $service->name . "\n";
             $text .= "🗓 Sáne: " . $workDate . " (" . $dayName . ")\n";
-            $text .= "⏰ Waqt: " . $booking->start_time . " - " . $booking->end_time . "\n";
-            $text .= "📊 Holat: " . $statusEmoji . " " . $statusText . "\n";
+            $text .= "⏰ Waqıt: " . $booking->start_time . " - " . $booking->end_time . "\n";
+            $text .= "📊 Jaǵdayı: " . $statusEmoji . " " . $statusText . "\n";
 
             if ($booking->notes) {
                 $text .= "📝 Izoh: " . $booking->notes . "\n";
@@ -64,7 +64,6 @@ class BookingViewService
 
             $text .= "\n";
 
-            // Har bir bron uchun batafsil ko'rish tugmasi
             $keyboard[] = [
                 [
                     'text' => "📋 Bron #" . ($index + 1) . " - " . $statusEmoji,
@@ -73,10 +72,9 @@ class BookingViewService
             ];
         }
 
-        // Navigatsiya tugmalari
         $keyboard[] = [
-            ['text' => '🔄 Yangilash', 'callback_data' => "my_bookings_{$client->id}"],
-            ['text' => '🏠 Bosh sahifa', 'callback_data' => 'main_menu']
+            ['text' => '🔄 Jańalaw', 'callback_data' => "my_bookings_{$client->id}"],
+            ['text' => '🏠 Menyu', 'callback_data' => 'main_menu']
         ];
 
         Telegram::sendMessage([
@@ -87,23 +85,20 @@ class BookingViewService
         ]);
     }
 
-    /**
-     * Bitta bronning batafsil ma'lumotlarini ko'rsatish
-     */
     public function showBookingDetail(int $chatId, int $bookingId)
     {
         $booking = Booking::with(['service', 'schedule.user', 'user', 'client'])
             ->find($bookingId);
 
         if (!$booking) {
-            $this->sendMessage($chatId, "❌ Bron topilmadi.");
+            $this->sendMessage($chatId, "❌ Bron tabılmadń");
             return;
         }
 
         // Faqat o'z bronini ko'ra oladi
         $client = $this->findOrCreateClient($chatId);
         if ($booking->client_id !== $client->id) {
-            $this->sendMessage($chatId, "❌ Siz bu bronni ko'ra olmaysiz.");
+            $this->sendMessage($chatId, "❌ Siz bul brondı kóre almaysız.");
             return;
         }
 
@@ -118,21 +113,25 @@ class BookingViewService
         $dayName = $this->getDayName($schedule->work_date);
         $createdAt = Carbon::parse($booking->created_at)->format('d.m.Y H:i');
 
-        $text = "📋 <b>Bron tafsilotlari</b>\n\n";
+        $startTime = Carbon::parse($booking->start_time)->format('H:i');
+        $endTime   = Carbon::parse($booking->end_time)->format('H:i');
+
+
+        $text = "📋 <b>Bron maǵlıwmatları</b>\n\n";
         $text .= "🆔 ID: #" . $booking->id . "\n";
-        $text .= "👨‍⚕️ <b>Mutaxassis:</b> " . $specialist->name . "\n";
+        $text .= "👨‍⚕️ <b>Qánige:</b> " . $specialist->name . "\n";
         $text .= "🔧 <b>Xizmet:</b> " . $service->name . "\n";
-        $text .= "⏱ <b>Davomiyligi:</b> " . $service->duration_minutes . " minut\n";
-        $text .= "💰 <b>Narx:</b> " . number_format($service->price, 0, '.', ' ') . " so'm\n\n";
+        $text .= "⏱ <b>Dawamlıǵı:</b> " . $service->duration_minutes . " minut\n";
+        $text .= "💰 <b>Xizmet baxası:</b> " . number_format($service->price, 0, '.', ' ') . " so'm\n\n";
 
         $text .= "🗓 <b>Sáne:</b> " . $workDate . " (" . $dayName . ")\n";
-        $text .= "⏰ <b>Waqt:</b> " . $booking->start_time . " - " . $booking->end_time . "\n\n";
+        $text .= "⏰ <b>Waqıt:</b> " . $startTime . " - " . $endTime . "\n\n";
 
-        $text .= "📊 <b>Holat:</b> " . $statusEmoji . " " . $statusText . "\n";
-        $text .= "📅 <b>Yaratilgan:</b> " . $createdAt . "\n";
+        $text .= "📊 <b>Jaǵdayı:</b> " . $statusEmoji . " " . $statusText . "\n";
+        $text .= "📅 <b>Jaratıńǵan waqtı:</b> " . $createdAt . "\n";
 
         if ($booking->notes) {
-            $text .= "📝 <b>Izoh:</b> " . $booking->notes . "\n";
+            $text .= "📝 <b>Túsindirme:</b> " . $booking->notes . "\n";
         }
 
         $keyboard = [];
@@ -140,17 +139,17 @@ class BookingViewService
         // Holat asosida tugmalar
         if ($booking->status === 'pending') {
             $keyboard[] = [
-                ['text' => '❌ Bekor qilish', 'callback_data' => "cancel_booking_{$booking->id}"]
+                ['text' => '❌ Biykarlaw', 'callback_data' => "cancel_booking_{$booking->id}"]
             ];
         } elseif ($booking->status === 'confirmed') {
             $keyboard[] = [
-                ['text' => '❌ Bekor qilish', 'callback_data' => "cancel_booking_{$booking->id}"]
+                ['text' => '❌ Biykarlaw', 'callback_data' => "cancel_booking_{$booking->id}"]
             ];
         }
 
         $keyboard[] = [
-            ['text' => '📖 Barcha bronlar', 'callback_data' => "my_bookings_{$client->id}"],
-            ['text' => '🏠 Bosh sahifa', 'callback_data' => 'main_menu']
+            ['text' => '📖 Meniń bronlarım', 'callback_data' => "my_bookings_{$client->id}"],
+            ['text' => '🏠 Menyu', 'callback_data' => 'main_menu']
         ];
 
         Telegram::sendMessage([
@@ -170,29 +169,28 @@ class BookingViewService
             ->find($bookingId);
 
         if (!$booking) {
-            $this->sendMessage($chatId, "❌ Bron topilmadi.");
+            $this->sendMessage($chatId, "❌ Bron tabılmadń");
             return;
         }
 
         // Faqat o'z bronini bekor qila oladi
         $client = $this->findOrCreateClient($chatId);
         if ($booking->client_id !== $client->id) {
-            $this->sendMessage($chatId, "❌ Siz bu bronni bekor qila olmaysiz.");
+            $this->sendMessage($chatId, "❌ Siz bul brondı biykarlay almaysız.");
             return;
         }
 
         // Faqat pending va confirmed holatidagi bronlarni bekor qilish mumkin
         if (!in_array($booking->status, ['pending', 'confirmed'])) {
-            $this->sendMessage($chatId, "❌ Bu bronni bekor qilish mumkin emas. Holat: " . $this->getStatusText($booking->status));
+            $this->sendMessage($chatId, "❌ Bul brondı biykarlaw múmkin emes. Jaǵdayı: " . $this->getStatusText($booking->status));
             return;
         }
 
-        // Vaqt tekshiruvi - brondan kamida 1 soat oldin bekor qilish kerak
         $bookingDateTime = Carbon::parse($booking->schedule->work_date . ' ' . $booking->start_time);
         $now = Carbon::now();
 
         if ($bookingDateTime->diffInHours($now) < 1 && $bookingDateTime->isFuture()) {
-            $this->sendMessage($chatId, "❌ Bron vaqtidan kamida 1 soat oldin bekor qilish kerak.");
+            $this->sendMessage($chatId, "❌ Bron waqtınan keminde 1 saat aldın biykarlanıwı kerek");
             return;
         }
 
@@ -200,16 +198,20 @@ class BookingViewService
 
         $workDate = Carbon::parse($booking->schedule->work_date)->format('d.m.Y');
 
-        $text = "✅ <b>Bron muvaffaqiyatli bekor qilindi!</b>\n\n";
+        $startTime = Carbon::parse($booking->start_time)->format('H:i');
+        $endTime   = Carbon::parse($booking->end_time)->format('H:i');
+
+
+        $text = "✅ <b>Bron biykarlandı!</b>\n\n";
         $text .= "📋 Bron ID: #" . $booking->id . "\n";
         $text .= "🔧 Xizmet: " . $booking->service->name . "\n";
         $text .= "🗓 Sáne: " . $workDate . "\n";
-        $text .= "⏰ Waqt: " . $booking->start_time . " - " . $booking->end_time . "\n";
+        $text .= "⏰ Waqıt: " . $startTime . " - " . $endTime . "\n";
 
         $keyboard = [
             [
-                ['text' => '📖 Barcha bronlar', 'callback_data' => "my_bookings_{$client->id}"],
-                ['text' => '🏠 Bosh sahifa', 'callback_data' => 'main_menu']
+                ['text' => '📖 Barlıq bronlar', 'callback_data' => "my_bookings_{$client->id}"],
+                ['text' => '🏠 Menyu', 'callback_data' => 'main_menu']
             ]
         ];
 
@@ -259,11 +261,11 @@ class BookingViewService
     private function getStatusText(string $status): string
     {
         return match ($status) {
-            'pending' => 'Kutilmoqda',
-            'confirmed' => 'Tasdiqlangan',
-            'canceled' => 'Bekor qilingan',
-            'completed' => 'Yakunlangan',
-            default => 'Noma\'lum'
+            'pending' => 'Kútilmekte',
+            'confirmed' => 'Qabıllanǵan',
+            'canceled' => 'Biykarlanǵan',
+            'completed' => 'Juwmaqlanǵan',
+            default => 'Belgisiz'
         };
     }
 
@@ -273,13 +275,13 @@ class BookingViewService
     private function getDayName($date): string
     {
         $dayNames = [
-            'Monday' => 'Dushanba',
-            'Tuesday' => 'Seshanba',
-            'Wednesday' => 'Chorshanba',
-            'Thursday' => 'Payshanba',
-            'Friday' => 'Juma',
-            'Saturday' => 'Shanba',
-            'Sunday' => 'Yakshanba'
+            'Monday' => '1-kún',
+            'Tuesday' => '2-kún',
+            'Wednesday' => '3-kún',
+            'Thursday' => '4-kún',
+            'Friday' => '5-kún',
+            'Saturday' => '6-kún',
+            'Sunday' => '7-kún'
         ];
 
         return $dayNames[Carbon::parse($date)->format('l')] ?? Carbon::parse($date)->format('l');

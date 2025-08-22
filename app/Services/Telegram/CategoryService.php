@@ -10,7 +10,7 @@ class CategoryService
 {
     public function __construct(protected UserService $userService)
     {
-        // 
+        //
     }
 
     public function showCategoriesToUser(int $chatId): void
@@ -51,15 +51,8 @@ class CategoryService
             return;
         }
 
-        $this->showSpecialists($chatId, $category);
-
-        // Bu yerda kategoriya tanlangandan keyin qilish kerak bo'lgan ishlarni yozasiz
-        // Masalan: mahsulotlarni ko'rsatish, boshqa service'ga o'tkazish va h.k.
-
-        // Keyingi qadamlar uchun:
-        // - ProductService'ga o'tkazish
-        // - Subkategoriyalar ko'rsatish
-        // - va hokazo...
+        // Category ID ni to'g'ri formatda uzatish
+        $this->showSpecialists($chatId, $category->id);
     }
 
     private function buildCategoryKeyboard(Collection $categories): string
@@ -89,9 +82,11 @@ class CategoryService
         ]);
     }
 
-    public function showSpecialists($chatId, $category)
+    public function showSpecialists($chatId, $categoryId)
     {
-        return $this->userService->showSpecialists($chatId, $category);
+        // Category ID ni "specialists_" prefiksi bilan birga uzatish
+        $data = "specialists_{$categoryId}";
+        return $this->userService->showSpecialists($chatId, $data);
     }
 
     private function sendMessage(int $chatId, string $text): void

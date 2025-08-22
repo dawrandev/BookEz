@@ -32,7 +32,6 @@ class CallbackQueryHandler
             'my_bookings_'         => fn() => $this->handleMyBookingsCallback($chatId, $data),
             'booking_detail_'      => fn() => $this->handleBookingDetailCallback($chatId, $data),
             'cancel_booking_'      => fn() => $this->handleCancelBookingCallback($chatId, $data),
-
             'specialist_services_' => fn() => $this->handleSpecialistServiceCallback($chatId, $data),
             'specialist_location_' => fn() => $this->handleLocationCallback($chatId, $data),
             'specialist_'          => fn() => $this->handleSpecialistCallback($chatId, $data),
@@ -53,7 +52,6 @@ class CallbackQueryHandler
         }
     }
 
-    // ✅ Yangi callback handlerlar
     private function handleMyBookingsCallback(int $chatId, string $data): void
     {
         $this->bookingViewService->showMyBookings($chatId);
@@ -73,11 +71,9 @@ class CallbackQueryHandler
 
     private function handleMainMenuCallback(int $chatId): void
     {
-        // Bosh sahifaga qaytish logic - UserService da yoki alohida method
         $this->clientService->showMainMenu($chatId);
     }
 
-    // Mavjud handlerlar o'zgarishsiz qoladi
     private function handleCategoryCallback(int $chatId, string $data): void
     {
         $categoryId = (int) substr($data, strlen('category_'));

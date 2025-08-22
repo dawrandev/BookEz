@@ -260,7 +260,7 @@ class BookingService
             ->first();
 
         if ($existingBooking) {
-            $this->sendMessage($chatId, '❌ Bu vaqt allaqachon band. Iltimas basqa waqıt tanlań.');
+            $this->sendMessage($chatId, '❌ Bul waqıt bánt. Iltimas basqa waqıt tanlań.');
             return;
         }
 
