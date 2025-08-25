@@ -3,6 +3,7 @@
 namespace App\Services\Telegram;
 
 use App\Models\Service;
+use App\Models\User;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
 class SpecialistService
@@ -10,6 +11,8 @@ class SpecialistService
     public function handleSpecialistServicesSection(int $chatId, int $specialistId): void
     {
         $services = $this->getServicesBySpecialistId($specialistId);
+
+        $categoryId = User::where('id', $specialistId)->value('category_id');
 
         if ($services->isEmpty()) {
             $this->sendMessage($chatId, 'Xizmetler kórsetilmegen');
@@ -23,7 +26,7 @@ class SpecialistService
             ];
         }
 
-        $keyboard[] = [['text' => '🔙Artqa', 'callback_data' => 'specialists']];
+        $keyboard[] = [['text' => '🔙Artqa', 'callback_data' => "specialist_{$specialistId}"]];
 
         Telegram::sendMessage([
             'chat_id' => $chatId,

@@ -21,7 +21,6 @@ class UserService
         if (str_starts_with($data, 'specialists_')) {
             $categoryId = (int) substr($data, strlen('specialists_'));
         }
-        // ...
 
         $specialists = $this->getActiveSpecialists($categoryId);
 
@@ -94,6 +93,8 @@ class UserService
 
     public function showSpecialistDetails(int $chatId, User $specialist): void
     {
+        $categoryId = $specialist->category ? $specialist->category->id : null;
+
         $text = "👨‍⚕️: <b>{$specialist->name}</b>\n"
             . "<b>{$specialist->category->name}</b>\n"
             . "📞: " . ($specialist->phone ?? 'kiritilmegen') . "\n"
@@ -106,7 +107,7 @@ class UserService
                     ['text' => '📍 Lokatsiya', 'callback_data' => "specialist_location_{$specialist->id}"]
                 ],
                 [
-                    ['text' => '🔙 Artqa', 'callback_data' => "specialists"]
+                    ['text' => '🔙 Artqa', 'callback_data' => "category_{$categoryId}"]
                 ],
             ],
         ]);

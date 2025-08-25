@@ -26,6 +26,9 @@ return new class extends Migration
                 'completed',
             ])->default('pending');
             $table->text('notes')->nullable();
+            $table->timestamp('completed_at')->nullable();
+            $table->tinyInteger('rating')->nullable();
+            $table->text('feedback')->nullable();
             $table->timestamps();
         });
     }

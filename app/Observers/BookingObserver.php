@@ -10,6 +10,8 @@ use Telegram\Bot\Laravel\Facades\Telegram;
 
 class BookingObserver
 {
+    /*************  ✨ Windsurf Command ⭐  *************/
+    /*******  c146da3f-1493-4498-8450-7573ffbfcf5d  *******/
     public function __construct(
         protected TelegramNotificationService $telegramNotificationService
     ) {

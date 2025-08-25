@@ -70,8 +70,10 @@ class BookingService
 
     private function generateScheduleText(int $specialistId, Service $service, Schedule $schedule): string
     {
+        // Faqat faol bronlarni olish (canceled bo'lmaganlarini)
         $bookings = Booking::where('user_id', $specialistId)
             ->where('schedule_id', $schedule->id)
+            ->whereIn('status', ['pending', 'confirmed', 'completed']) // canceled ni chiqarib tashlash
             ->get();
 
         $breaks = ScheduleBreak::where('schedule_id', $schedule->id)
@@ -118,8 +120,10 @@ class BookingService
 
     private function generateInlineKeyboard(int $specialistId, Service $service, Schedule $schedule): array
     {
+        // Faqat faol bronlarni olish (canceled bo'lmaganlarini)
         $bookings = Booking::where('user_id', $specialistId)
             ->where('schedule_id', $schedule->id)
+            ->whereIn('status', ['pending', 'confirmed', 'completed']) // canceled ni chiqarib tashlash
             ->get();
 
         $breaks = ScheduleBreak::where('schedule_id', $schedule->id)->get();
@@ -166,7 +170,6 @@ class BookingService
 
         return $keyboard;
     }
-
     private function getPaginationButtons(int $specialistId, Schedule $currentSchedule, int $serviceId): array
     {
         $buttons = [];
@@ -250,7 +253,9 @@ class BookingService
             return;
         }
 
+        // Faqat faol bronlar bilan konflikt tekshirish (canceled bo'lmaganlar bilan)
         $existingBooking = Booking::where('schedule_id', $scheduleId)
+            ->whereIn('status', ['pending', 'confirmed', 'completed']) // canceled ni chiqarib tashlash
             ->where(function ($query) use ($startTime, $endTime) {
                 $query->where(function ($q) use ($startTime, $endTime) {
                     $q->where('start_time', '<', $endTime->format('H:i'))
@@ -281,12 +286,12 @@ class BookingService
             Notification::make()
                 ->title('Jańa bron jaratıldı')
                 ->body("
-                    Клиент: {$client->full_name}\n
-                    Услуга: {$service->name}\n
-                    Дата: {$schedule->work_date->format('d.m.Y')}\n
-                    Время: {$startTime->format('H:i')} - {$endTime->format('H:i')}\n
-                    Статус: В ожидании
-                ")
+                Клиент: {$client->full_name}\n
+                Услуга: {$service->name}\n
+                Дата: {$schedule->work_date->format('d.m.Y')}\n
+                Время: {$startTime->format('H:i')} - {$endTime->format('H:i')}\n
+                Статус: В ожидании
+            ")
                 ->actions([
                     \Filament\Notifications\Actions\Action::make('view')
                         ->label('Просмотреть')

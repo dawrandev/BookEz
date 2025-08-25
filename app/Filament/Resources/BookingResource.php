@@ -289,6 +289,23 @@ class BookingResource extends Resource
                     ->after(function () {
                         return redirect()->route('filament.admin.resources.bookings.index');
                     }),
+                Tables\Actions\Action::make('complete')
+                    ->label('Завершить')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('primary')
+                    ->action(function (Booking $record) {
+                        $record->status = 'completed';
+                        $record->save(); // Eloquent orqali save, observerni trigger qiladi
+                    })
+                    ->visible(fn(Booking $record) => $record->status === 'confirmed') // Faqat tasdiqlangan bookinglar uchun
+                    ->requiresConfirmation()
+                    ->modalHeading('Завершить бронирование')
+                    ->modalDescription('Вы уверены, что хотите завершить это бронирование?')
+                    ->modalSubmitActionLabel('Да, завершить')
+                    ->modalCancelActionLabel('Отмена')
+                    ->after(function () {
+                        return redirect()->route('filament.admin.resources.bookings.index');
+                    }),
                 Tables\Actions\Action::make('cancel')
                     ->label('Отменить')
                     ->icon('heroicon-o-x-circle')

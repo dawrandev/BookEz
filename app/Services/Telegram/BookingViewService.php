@@ -128,7 +128,7 @@ class BookingViewService
         $text .= "⏰ <b>Waqıt:</b> " . $startTime . " - " . $endTime . "\n\n";
 
         $text .= "📊 <b>Jaǵdayı:</b> " . $statusEmoji . " " . $statusText . "\n";
-        $text .= "📅 <b>Jaratıńǵan waqtı:</b> " . $createdAt . "\n";
+        $text .= "📅 <b>Jaratılǵan waqtı:</b> " . $createdAt . "\n";
 
         if ($booking->notes) {
             $text .= "📝 <b>Túsindirme:</b> " . $booking->notes . "\n";
@@ -136,7 +136,6 @@ class BookingViewService
 
         $keyboard = [];
 
-        // Holat asosida tugmalar
         if ($booking->status === 'pending') {
             $keyboard[] = [
                 ['text' => '❌ Biykarlaw', 'callback_data' => "cancel_booking_{$booking->id}"]
@@ -160,9 +159,6 @@ class BookingViewService
         ]);
     }
 
-    /**
-     * Bronni bekor qilish
-     */
     public function cancelBooking(int $chatId, int $bookingId)
     {
         $booking = Booking::with(['service', 'schedule.user', 'client'])
@@ -180,13 +176,14 @@ class BookingViewService
             return;
         }
 
-        // Faqat pending va confirmed holatidagi bronlarni bekor qilish mumkin
         if (!in_array($booking->status, ['pending', 'confirmed'])) {
             $this->sendMessage($chatId, "❌ Bul brondı biykarlaw múmkin emes. Jaǵdayı: " . $this->getStatusText($booking->status));
             return;
         }
 
-        $bookingDateTime = Carbon::parse($booking->schedule->work_date . ' ' . $booking->start_time);
+        // work_date ni faqat sana sifatida olish va start_time bilan birlashtirish
+        $workDate = Carbon::parse($booking->schedule->work_date)->format('Y-m-d');
+        $bookingDateTime = Carbon::parse($workDate . ' ' . $booking->start_time);
         $now = Carbon::now();
 
         if ($bookingDateTime->diffInHours($now) < 1 && $bookingDateTime->isFuture()) {
@@ -196,16 +193,15 @@ class BookingViewService
 
         $booking->update(['status' => 'canceled']);
 
-        $workDate = Carbon::parse($booking->schedule->work_date)->format('d.m.Y');
-
+        // Display uchun formatlar
+        $displayDate = Carbon::parse($booking->schedule->work_date)->format('d.m.Y');
         $startTime = Carbon::parse($booking->start_time)->format('H:i');
-        $endTime   = Carbon::parse($booking->end_time)->format('H:i');
-
+        $endTime = Carbon::parse($booking->end_time)->format('H:i');
 
         $text = "✅ <b>Bron biykarlandı!</b>\n\n";
         $text .= "📋 Bron ID: #" . $booking->id . "\n";
         $text .= "🔧 Xizmet: " . $booking->service->name . "\n";
-        $text .= "🗓 Sáne: " . $workDate . "\n";
+        $text .= "🗓 Sáne: " . $displayDate . "\n";
         $text .= "⏰ Waqıt: " . $startTime . " - " . $endTime . "\n";
 
         $keyboard = [

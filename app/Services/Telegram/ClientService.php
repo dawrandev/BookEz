@@ -3,16 +3,20 @@
 namespace App\Services\Telegram;
 
 use App\Models\Client;
+use App\Services\Telegram\RatingService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
 class ClientService
 {
-    public function __construct(protected CategoryService $categoryService)
-    {
+    public function __construct(
+        protected CategoryService $categoryService,
+        protected RatingService $ratingService
+    ) {
         // 
     }
+
     public function startRegistration(int $chatId): void
     {
         Cache::put("register_step_$chatId", 'ask_full_name', 300);
@@ -56,6 +60,43 @@ class ClientService
             Log::error("Client creation failed: " . $e->getMessage());
             $this->sendMessage($chatId, 'Dizimde qatelik júz berdi. Iltimas qaytadan urınıp kóriń');
         }
+    }
+
+    public function handleTextMessage(int $chatId, string $text): bool
+    {
+        // Feedback kutilayotgan holat tekshirish
+        if ($this->ratingService->isWaitingForFeedback($chatId)) {
+            return $this->ratingService->handleFeedbackText($chatId, $text);
+        }
+
+        // Ro'yxatdan o'tish jarayoni
+        $step = $this->getCurrentStep($chatId);
+        if ($step === 'ask_full_name') {
+            $this->handleFullNameStep($chatId, $text);
+            return true;
+        }
+
+        return false; // Bu service bilan bog'liq emas
+    }
+
+    public function handleCallbackQuery(int $chatId, string $data): bool
+    {
+        // Rating callback'larni tekshirish
+        if (
+            str_contains($data, 'rating_') || str_contains($data, 'rate_') ||
+            str_contains($data, 'skip_rating_') || str_contains($data, 'skip_feedback_')
+        ) {
+            $this->ratingService->handleRatingCallback($chatId, $data);
+            return true;
+        }
+
+        // Main menu callbacks
+        if ($data === 'main_menu') {
+            $this->showMainMenu($chatId);
+            return true;
+        }
+
+        return false; // Bu service bilan bog'liq emas
     }
 
     public function getCurrentStep(int $chatId): ?string
@@ -103,7 +144,7 @@ class ClientService
 
     public function showCategories(int $chatId): void
     {
-        $categoryService = $this->categoryService->showCategoriesToUser($chatId);
+        $this->categoryService->showCategoriesToUser($chatId);
     }
 
     public function showMainMenu(int $chatId)
@@ -120,7 +161,6 @@ class ClientService
                     ['text' => '📖Bronlarım', 'callback_data' => "my_bookings_{$client->id}"]
                 ]
             ]
-
         ]);
 
         Telegram::sendMessage([

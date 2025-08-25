@@ -74,16 +74,19 @@ class ServiceResource extends Resource
             Tables\Columns\TextColumn::make('index')
                 ->label('№')
                 ->rowIndex()
-                ->sortable(),
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: false), // har doim ko‘rinsin
 
             Tables\Columns\ImageColumn::make('user.photo')
                 ->label('Фото')
-                ->circular(),
+                ->circular()
+                ->toggleable(isToggledHiddenByDefault: true), // mobil ekranda yashiriladi
 
             Tables\Columns\TextColumn::make('name')
                 ->label('Название услуги')
                 ->sortable()
-                ->searchable(),
+                ->searchable()
+                ->toggleable(isToggledHiddenByDefault: false),
 
             Tables\Columns\TextColumn::make('duration_minutes')
                 ->label('Продолжительность')
@@ -101,7 +104,8 @@ class ServiceResource extends Resource
 
                     return "{$minutes} мин";
                 })
-                ->sortable(),
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true), // mobil uchun optional
 
             Tables\Columns\TextColumn::make('price')
                 ->label('Цена')
@@ -110,7 +114,8 @@ class ServiceResource extends Resource
                         ? number_format($state, 0, '.', ' ') . ' сум'
                         : '—'
                 )
-                ->sortable(),
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: false),
         ];
 
         if ($user && $user->hasRole('admin')) {
@@ -118,11 +123,14 @@ class ServiceResource extends Resource
                 Tables\Columns\TextColumn::make('user.category.name')
                     ->label('Категория')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Пользователь')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ]);
         }
 
@@ -152,8 +160,11 @@ class ServiceResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ])
-            ]);
+            ])
+            ->paginated([10, 25, 50])
+            ->defaultPaginationPageOption(10);
     }
+
 
 
     public static function getPages(): array

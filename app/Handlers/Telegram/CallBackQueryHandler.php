@@ -7,7 +7,7 @@ use App\Services\Telegram\SpecialistService;
 use App\Services\Telegram\UserService;
 use App\Services\Telegram\BookingService;
 use App\Services\Telegram\LocationService;
-use App\Services\Telegram\BookingViewService; // ✅ Yangi service
+use App\Services\Telegram\BookingViewService;
 use App\Services\Telegram\ClientService;
 use Telegram\Bot\Objects\CallbackQuery;
 
@@ -27,6 +27,8 @@ class CallbackQueryHandler
     {
         $data = $callbackQuery->getData();
         $chatId = $callbackQuery->getMessage()->getChat()->getId();
+
+        $this->clientService->handleCallbackQuery($chatId, $data);
 
         $handlers = [
             'my_bookings_'         => fn() => $this->handleMyBookingsCallback($chatId, $data),

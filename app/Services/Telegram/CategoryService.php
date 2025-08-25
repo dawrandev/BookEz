@@ -51,7 +51,6 @@ class CategoryService
             return;
         }
 
-        // Category ID ni to'g'ri formatda uzatish
         $this->showSpecialists($chatId, $category->id);
     }
 
@@ -84,7 +83,6 @@ class CategoryService
 
     public function showSpecialists($chatId, $categoryId)
     {
-        // Category ID ni "specialists_" prefiksi bilan birga uzatish
         $data = "specialists_{$categoryId}";
         return $this->userService->showSpecialists($chatId, $data);
     }
