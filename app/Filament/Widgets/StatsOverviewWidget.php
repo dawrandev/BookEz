@@ -6,12 +6,13 @@ use App\Models\Booking;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Auth;
 
 class StatsOverviewWidget extends BaseWidget
 {
     protected function getStats(): array
     {
-        $userId = auth()->id();
+        $userId = Auth::id();
 
         // Umumiy reyting
         $avgRating = Booking::where('user_id', $userId)
@@ -86,15 +87,15 @@ class StatsOverviewWidget extends BaseWidget
                 ->chart(array_fill(0, 7, $avgRating ?? 0)),
 
             Stat::make('Bugungi Daromad', number_format($todayRevenue, 0))
-                ->description($this->getPercentageChange($todayRevenue, $yesterdayRevenue) . '% kecha bilan solishtirganda')
-                ->descriptionIcon($todayRevenue >= $yesterdayRevenue ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                ->color($todayRevenue >= $yesterdayRevenue ? 'success' : 'danger')
-                ->chart([10, 20, 15, 30, 25, 40, $todayRevenue]),
+                ->description('Bugun tugallangan xizmatlardan')
+                ->descriptionIcon('heroicon-m-banknotes')
+                ->color('success')
+                ->chart($this->getWeeklyRevenueChart($userId)),
 
             Stat::make('Ushbu Oy Daromadi', number_format($monthRevenue, 0))
-                ->description($this->getPercentageChange($monthRevenue, $lastMonthRevenue) . '% o\'tgan oy bilan solishtirganda')
-                ->descriptionIcon($monthRevenue >= $lastMonthRevenue ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                ->color($monthRevenue >= $lastMonthRevenue ? 'success' : 'danger')
+                ->description(now()->format('F') . ' oyida topilgan daromad')
+                ->descriptionIcon('heroicon-m-currency-dollar')
+                ->color('primary')
                 ->chart($this->getMonthlyChart($userId)),
 
             Stat::make('Ushbu Yil Daromadi', number_format($yearRevenue, 0))
@@ -105,14 +106,20 @@ class StatsOverviewWidget extends BaseWidget
         ];
     }
 
-    private function getPercentageChange($current, $previous): string
+    private function getWeeklyRevenueChart($userId): array
     {
-        if ($previous == 0) {
-            return $current > 0 ? '+100' : '0';
+        $data = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $revenue = Booking::where('user_id', $userId)
+                ->where('status', 'completed')
+                ->whereDate('completed_at', $date)
+                ->with('service')
+                ->get()
+                ->sum('service.price');
+            $data[] = $revenue;
         }
-
-        $change = (($current - $previous) / $previous) * 100;
-        return $change >= 0 ? '+' . number_format($change, 1) : number_format($change, 1);
+        return $data;
     }
 
     private function getMonthlyChart($userId): array

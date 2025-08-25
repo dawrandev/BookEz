@@ -7,18 +7,18 @@ use Carbon\Carbon;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Support\Facades\Auth;
 
 class LatestBookings extends BaseWidget
 {
     protected static ?string $heading = 'So\'nggi Bookinglar';
-    protected static ?int $sort = 4;
     protected int | string | array $columnSpan = 'full';
 
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                Booking::where('user_id', auth()->id())
+                Booking::where('user_id', Auth::id())
                     ->with(['client', 'service', 'schedule'])
                     ->latest()
                     ->limit(5)

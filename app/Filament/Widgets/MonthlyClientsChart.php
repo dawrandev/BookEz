@@ -1,5 +1,4 @@
 <?php
-// Test uchun - faqat tekshirish maqsadida
 
 namespace App\Filament\Widgets;
 
@@ -8,45 +7,44 @@ use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
 
-class RevenueChart extends ChartWidget
+class MonthlyClientsChart extends ChartWidget
 {
-    protected static ?string $heading = 'Еженедельный доход';
+    protected static ?string $heading = 'Oylik Mijozlar Soni (so\'nggi 12 oy)';
     protected static ?string $maxHeight = '300px';
-    protected int | string | array $columnSpan = 2;
+    protected int | string | array $columnSpan = 'full';
 
     protected function getData(): array
     {
-        $userId = 1; // Test uchun qo'lda o'rnatdik
+        $userId = Auth::id();
         $data = [];
         $labels = [];
 
-        for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i);
-            $labels[] = $date->format('M j');
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $labels[] = $date->format('M Y');
 
-            // Avval updated_at bo'yicha sinab ko'ramiz
-            $bookings = Booking::where('user_id', $userId)
-                ->where('status', 'completed')
-                ->whereDate('updated_at', $date->format('Y-m-d')) // completed_at o'rniga updated_at
-                ->with('service')
-                ->get();
+            $clientsCount = Booking::where('user_id', $userId)
+                ->whereMonth('created_at', $date->month)
+                ->whereYear('created_at', $date->year)
+                ->distinct('client_id')
+                ->count('client_id');
 
-            $revenue = $bookings->sum(function ($booking) {
-                return $booking->service ? $booking->service->price : 10000; // Default 10000
-            });
-
-            $data[] = (float) $revenue;
+            $data[] = $clientsCount;
         }
 
         return [
             'datasets' => [
                 [
-                    'label' => 'Доход',
+                    'label' => 'Mijozlar Soni',
                     'data' => $data,
                     'borderColor' => '#10B981',
                     'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                     'fill' => true,
                     'tension' => 0.4,
+                    'pointBackgroundColor' => '#10B981',
+                    'pointBorderColor' => '#ffffff',
+                    'pointBorderWidth' => 2,
+                    'pointRadius' => 5,
                 ],
             ],
             'labels' => $labels,
@@ -73,7 +71,8 @@ class RevenueChart extends ChartWidget
                 'y' => [
                     'beginAtZero' => true,
                     'ticks' => [
-                        'callback' => 'function(value) { return new Intl.NumberFormat().format(value); }',
+                        'stepSize' => 1,
+                        'callback' => 'function(value) { return Math.floor(value) === value ? value : null; }',
                     ],
                 ],
             ],

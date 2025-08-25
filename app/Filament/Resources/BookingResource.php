@@ -289,15 +289,18 @@ class BookingResource extends Resource
                     ->after(function () {
                         return redirect()->route('filament.admin.resources.bookings.index');
                     }),
+                // BookingResource.php da complete action'ni quyidagicha o'zgartiring:
+
                 Tables\Actions\Action::make('complete')
                     ->label('Завершить')
                     ->icon('heroicon-o-check-badge')
                     ->color('primary')
                     ->action(function (Booking $record) {
                         $record->status = 'completed';
-                        $record->save(); // Eloquent orqali save, observerni trigger qiladi
+                        $record->completed_at = now(); // Bu qatorni qo'shing
+                        $record->save();
                     })
-                    ->visible(fn(Booking $record) => $record->status === 'confirmed') // Faqat tasdiqlangan bookinglar uchun
+                    ->visible(fn(Booking $record) => $record->status === 'confirmed')
                     ->requiresConfirmation()
                     ->modalHeading('Завершить бронирование')
                     ->modalDescription('Вы уверены, что хотите завершить это бронирование?')

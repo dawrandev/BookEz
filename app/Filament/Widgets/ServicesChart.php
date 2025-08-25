@@ -5,16 +5,17 @@ namespace App\Filament\Widgets;
 use App\Models\Service;
 use App\Models\Booking;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Auth;
 
 class ServicesChart extends ChartWidget
 {
     protected static ?string $heading = 'Самые популярные услуги'; // Eng Mashhur Xizmatlar
-    protected static ?int $sort = 3;
     protected static ?string $maxHeight = '300px';
+    protected int | string | array $columnSpan = 2;
 
     protected function getData(): array
     {
-        $userId = auth()->id();
+        $userId = Auth::id();
 
         $services = Service::where('user_id', $userId)
             ->withCount(['bookings' => function ($query) {

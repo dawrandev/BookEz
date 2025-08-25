@@ -7,14 +7,14 @@ use App\Models\Service;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\Auth;
 
 class AdditionalStatsWidget extends BaseWidget
 {
-    protected static ?int $sort = 5;
 
     protected function getStats(): array
     {
-        $userId = auth()->id();
+        $userId = Auth::id();
 
         // O'rtacha xizmat narxi (completed bookings)
         $avgServicePrice = Booking::where('user_id', $userId)
