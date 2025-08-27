@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class MonthlyClientsChart extends ChartWidget
 {
-    protected static ?string $heading = 'Oylik Mijozlar Soni (so\'nggi 12 oy)';
+    protected static ?string $heading = 'Ежемесячное количество клиентов (последние 12 месяцев)';
     protected static ?string $maxHeight = '300px';
     protected int | string | array $columnSpan = 'full';
 
@@ -35,13 +35,13 @@ class MonthlyClientsChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Mijozlar Soni',
+                    'label' => 'Количество клиентов',
                     'data' => $data,
-                    'borderColor' => '#10B981',
-                    'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
+                    'borderColor' => '#00eaffff',
+                    'backgroundColor' => 'rgba(15, 197, 194, 0.1)',
                     'fill' => true,
                     'tension' => 0.4,
-                    'pointBackgroundColor' => '#10B981',
+                    'pointBackgroundColor' => '#00eaffff',
                     'pointBorderColor' => '#ffffff',
                     'pointBorderWidth' => 2,
                     'pointRadius' => 5,

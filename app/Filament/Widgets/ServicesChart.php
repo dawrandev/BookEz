@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ServicesChart extends ChartWidget
 {
-    protected static ?string $heading = 'Самые популярные услуги'; // Eng Mashhur Xizmatlar
+    protected static ?string $heading = 'Самые популярные услуги';
     protected static ?string $maxHeight = '300px';
     protected int | string | array $columnSpan = 2;
 

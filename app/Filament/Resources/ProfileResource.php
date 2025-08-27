@@ -93,7 +93,7 @@ class ProfileResource extends Resource
                             ->icon('heroicon-o-map')
                             ->schema([
                                 LeafletMapPicker::make('location')
-                                    ->label('Location')
+                                    ->label('Локация')
                                     ->height('400px')
                                     ->defaultLocation([42.4531, 59.6103])
                                     ->defaultZoom(13)

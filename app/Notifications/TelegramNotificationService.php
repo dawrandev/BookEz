@@ -99,7 +99,6 @@ class TelegramNotificationService
 
             case 'canceled':
                 $message .= "❌ <b>Status: Bıykarllandı</b>\n";
-                $message .= "Bron specialist tárepinen biykarlandı.\n";
                 $message .= "Boshqa waqıt ushın qaytadan bron qılıńız.";
                 break;
 
@@ -133,7 +132,7 @@ class TelegramNotificationService
             case 'confirmed':
                 return [
                     [
-                        ['text' => '❌ Bıykarllaw', 'callback_data' => "cancel_booking_{$booking->id}"],
+                        ['text' => '❌ Bıykarlaw', 'callback_data' => "cancel_booking_{$booking->id}"],
                     ],
                     [
                         ['text' => '📖 Barlıq bronlar', 'callback_data' => "my_bookings_{$booking->client_id}"],

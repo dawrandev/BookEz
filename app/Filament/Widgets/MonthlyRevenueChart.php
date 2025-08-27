@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class MonthlyRevenueChart extends ChartWidget
 {
-    protected static ?string $heading = 'Oylik Daromad (so\'nggi 12 oy)';
+    protected static ?string $heading = 'Ежемесячный Доход (последние 12 месяцев)';
     protected static ?string $maxHeight = '300px';
     protected int | string | array $columnSpan = 'full';
 
@@ -19,22 +19,18 @@ class MonthlyRevenueChart extends ChartWidget
         $data = [];
         $labels = [];
 
-        // So'nggi 12 oy uchun ma'lumotlarni yig'amiz
         for ($i = 11; $i >= 0; $i--) {
             $date = now()->subMonths($i);
             $labels[] = $date->format('M Y');
 
-            // Agar completed_at mavjud bo'lsa uni ishlatamiz, aks holda updated_at
             $bookings = Booking::where('user_id', $userId)
                 ->where('status', 'completed')
                 ->where(function ($query) use ($date) {
                     $query->where(function ($q) use ($date) {
-                        // completed_at mavjud bo'lsa uni ishlatamiz
                         $q->whereNotNull('completed_at')
                             ->whereMonth('completed_at', $date->month)
                             ->whereYear('completed_at', $date->year);
                     })->orWhere(function ($q) use ($date) {
-                        // completed_at yo'q bo'lsa updated_at ishlatamiz
                         $q->whereNull('completed_at')
                             ->whereMonth('updated_at', $date->month)
                             ->whereYear('updated_at', $date->year);
@@ -53,7 +49,7 @@ class MonthlyRevenueChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Daromad',
+                    'label' => 'Доход',
                     'data' => $data,
                     'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
                     'borderColor' => '#3B82F6',

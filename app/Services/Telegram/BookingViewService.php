@@ -5,6 +5,7 @@ namespace App\Services\Telegram;
 use App\Models\Booking;
 use App\Models\Client;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
 class BookingViewService
@@ -186,37 +187,29 @@ class BookingViewService
         $bookingDateTime = Carbon::parse($workDate . ' ' . $booking->start_time);
         $now = Carbon::now();
 
-        if ($bookingDateTime->diffInHours($now) < 1 && $bookingDateTime->isFuture()) {
+        // Debug uchun (keyinchalik o'chirish mumkin)
+        Log::info('Booking cancel check:', [
+            'booking_datetime' => $bookingDateTime->toDateTimeString(),
+            'now' => $now->toDateTimeString(),
+            'is_future' => $bookingDateTime->isFuture(),
+            'diff_in_hours' => $bookingDateTime->diffInHours($now, false), // false - real difference with sign
+            'hours_until_booking' => $now->diffInHours($bookingDateTime, false)
+        ]);
+
+        // Agar bron vaqti o'tib ketgan bo'lsa
+        if ($bookingDateTime->isPast()) {
+            $this->sendMessage($chatId, "❌ O'tib ketgan bronni biykarlaw múmkin emes");
+            return;
+        }
+
+        // Agar bron vaqtigacha 1 soatdan kam qolgan bo'lsa
+        $hoursUntilBooking = $now->diffInHours($bookingDateTime, false);
+        if ($hoursUntilBooking < 1) {
             $this->sendMessage($chatId, "❌ Bron waqtınan keminde 1 saat aldın biykarlanıwı kerek");
             return;
         }
 
         $booking->update(['status' => 'canceled']);
-
-        // Display uchun formatlar
-        $displayDate = Carbon::parse($booking->schedule->work_date)->format('d.m.Y');
-        $startTime = Carbon::parse($booking->start_time)->format('H:i');
-        $endTime = Carbon::parse($booking->end_time)->format('H:i');
-
-        $text = "✅ <b>Bron biykarlandı!</b>\n\n";
-        $text .= "📋 Bron ID: #" . $booking->id . "\n";
-        $text .= "🔧 Xizmet: " . $booking->service->name . "\n";
-        $text .= "🗓 Sáne: " . $displayDate . "\n";
-        $text .= "⏰ Waqıt: " . $startTime . " - " . $endTime . "\n";
-
-        $keyboard = [
-            [
-                ['text' => '📖 Barlıq bronlar', 'callback_data' => "my_bookings_{$client->id}"],
-                ['text' => '🏠 Menyu', 'callback_data' => 'main_menu']
-            ]
-        ];
-
-        Telegram::sendMessage([
-            'chat_id' => $chatId,
-            'text' => $text,
-            'reply_markup' => json_encode(['inline_keyboard' => $keyboard]),
-            'parse_mode' => 'HTML'
-        ]);
     }
 
     /**

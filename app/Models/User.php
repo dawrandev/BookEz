@@ -87,6 +87,11 @@ class User extends Authenticatable
         return $this->hasMany(Booking::class);
     }
 
+    public function networks()
+    {
+        return $this->hasMany(SocialNetworks::class);
+    }
+
     public function getPhotoUrlAttribute()
     {
         if ($this->photo) {

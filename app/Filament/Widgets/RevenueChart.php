@@ -1,5 +1,4 @@
 <?php
-// Test uchun - faqat tekshirish maqsadida
 
 namespace App\Filament\Widgets;
 
@@ -16,7 +15,7 @@ class RevenueChart extends ChartWidget
 
     protected function getData(): array
     {
-        $userId = 1; // Test uchun qo'lda o'rnatdik
+        $userId = 1;
         $data = [];
         $labels = [];
 
@@ -24,15 +23,14 @@ class RevenueChart extends ChartWidget
             $date = now()->subDays($i);
             $labels[] = $date->format('M j');
 
-            // Avval updated_at bo'yicha sinab ko'ramiz
             $bookings = Booking::where('user_id', $userId)
                 ->where('status', 'completed')
-                ->whereDate('updated_at', $date->format('Y-m-d')) // completed_at o'rniga updated_at
+                ->whereDate('updated_at', $date->format('Y-m-d'))
                 ->with('service')
                 ->get();
 
             $revenue = $bookings->sum(function ($booking) {
-                return $booking->service ? $booking->service->price : 10000; // Default 10000
+                return $booking->service ? $booking->service->price : 10000;
             });
 
             $data[] = (float) $revenue;
