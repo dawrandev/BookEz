@@ -64,12 +64,6 @@ class ClientService
 
     public function handleTextMessage(int $chatId, string $text): bool
     {
-        // Feedback kutilayotgan holat tekshirish
-        if ($this->ratingService->isWaitingForFeedback($chatId)) {
-            return $this->ratingService->handleFeedbackText($chatId, $text);
-        }
-
-        // Ro'yxatdan o'tish jarayoni
         $step = $this->getCurrentStep($chatId);
         if ($step === 'ask_full_name') {
             $this->handleFullNameStep($chatId, $text);
@@ -149,26 +143,40 @@ class ClientService
 
     public function showMainMenu(int $chatId)
     {
-        $client = Client::where('telegram_chat_id', $chatId)->first();
+        try {
+            $client = Client::where('telegram_chat_id', $chatId)->first();
 
-        $keyboard = json_encode([
-            'inline_keyboard' => [
-                [
-                    ['text' => '👨‍⚕️ Specialistler', 'callback_data' => 'specialists'],
-                    ['text' => '📂 Kategoriyalar', 'callback_data' => 'categories'],
-                ],
-                [
-                    ['text' => '📖Bronlarım', 'callback_data' => "my_bookings_{$client->id}"]
+            if (!$client) {
+                $this->sendMessage($chatId, 'Iltimas dizimnen ótiń');
+                return;
+            }
+
+            $keyboard = json_encode([
+                'inline_keyboard' => [
+                    [
+                        ['text' => '👥 Specialistler', 'callback_data' => 'specialists'],
+                    ],
+                    [
+                        ['text' => '📂 Kategoriyalar', 'callback_data' => 'categories'],
+                        ['text' => '📖Bronlarım', 'callback_data' => "my_bookings_{$client->id}"]
+                    ],
+                    [
+                        ['text' => '🔍Izlew', 'callback_data' => 'search'],
+                    ]
                 ]
-            ]
-        ]);
+            ]);
 
-        Telegram::sendMessage([
-            'chat_id' => $chatId,
-            'text' => '🏠 Bas menyu',
-            'reply_markup' => $keyboard
-        ]);
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => '🏠 Bas menyu',
+                'reply_markup' => $keyboard
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Client retrieval failed: " . $e->getMessage());
+            $this->sendMessage($chatId, 'Iltimas dizimnen ótiń');
+        }
     }
+
 
     private function sendMessage(int $chatId, string $text): void
     {

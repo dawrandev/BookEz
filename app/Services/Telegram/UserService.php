@@ -91,6 +91,16 @@ class UserService
         $this->showSpecialistDetails($chatId, $specialist);
     }
 
+    public function promptSearch(int $chatId, string $data): void
+    {
+        cache()->put("search_state_{$chatId}", true, now()->addMinutes(5));
+
+        Telegram::sendMessage([
+            'chat_id' => $chatId,
+            'text' => '🔎 Specialist izlew ushın onıń atın jazıń:'
+        ]);
+    }
+
     public function showSpecialistDetails(int $chatId, User $specialist): void
     {
         $categoryId = $specialist->category ? $specialist->category->id : null;
@@ -104,6 +114,9 @@ class UserService
             'inline_keyboard' => [
                 [
                     ['text' => '➕ Bron qılıw', 'callback_data' => "specialist_services_{$specialist->id}"],
+                ],
+                [
+                    ['text' => '🌐 Social Tarmaqlar', 'callback_data' => "socials_{$specialist->id}"],
                     ['text' => '📍 Lokatsiya', 'callback_data' => "specialist_location_{$specialist->id}"]
                 ],
                 [

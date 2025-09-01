@@ -3,6 +3,7 @@
 namespace App\Handlers\Telegram;
 
 use App\Services\Telegram\ClientService;
+use App\Services\Telegram\SearchService;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Laravel\Facades\Telegram;
@@ -13,8 +14,10 @@ class MessageHandler
     protected $chatId;
     protected $text;
 
-    public function __construct(protected ClientService $clientService)
-    {
+    public function __construct(
+        protected ClientService $clientService,
+        protected SearchService $searchService
+    ) {
         $update = Telegram::getWebhookUpdate();
         $this->message = $update->getMessage();
         $this->chatId = $this->message->getChat()->getId();
@@ -30,6 +33,14 @@ class MessageHandler
             }
 
             if (str_starts_with($this->text, '/')) {
+                return;
+            }
+
+            // Search mode tekshiruvi - eng birinchi
+            if ($this->searchService->isSearchModeActive($this->chatId)) {
+                Log::info("Search mode active for chat: {$this->chatId}, query: {$this->text}");
+                $this->searchService->handleSearchQuery($this->chatId, $this->text);
+                Log::info("Search handled, returning...");
                 return;
             }
 

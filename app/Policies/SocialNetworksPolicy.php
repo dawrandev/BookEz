@@ -10,7 +10,13 @@ class SocialNetworksPolicy
 {
     public function before(User $user, $ability)
     {
-        return true;
+        if ($user->hasRole('specialist')) {
+            return true;
+        }
+
+        if ($user->hasRole('admin') && in_array($ability, ['viewAny', 'view'])) {
+            return true;
+        }
     }
     /**
      * Determine whether the user can view any models.

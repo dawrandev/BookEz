@@ -36,7 +36,7 @@ class BookingService
         }
 
         if (!$schedule) {
-            $this->sendMessage($chatId, "Bul qániygede is waqtı kiritilmegen!");
+            $this->sendMessage($chatId, "Bul qániygede jumıs waqtı kiritilmegen!");
             return;
         }
 

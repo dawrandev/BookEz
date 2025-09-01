@@ -9,6 +9,8 @@ use App\Services\Telegram\BookingService;
 use App\Services\Telegram\LocationService;
 use App\Services\Telegram\BookingViewService;
 use App\Services\Telegram\ClientService;
+use App\Services\Telegram\SocialNetworksService;
+use Telegram\Bot\Laravel\Facades\Telegram;
 use Telegram\Bot\Objects\CallbackQuery;
 
 class CallbackQueryHandler
@@ -20,7 +22,8 @@ class CallbackQueryHandler
         protected BookingService $bookingService,
         protected LocationService $locationService,
         protected BookingViewService $bookingViewService,
-        protected ClientService $clientService
+        protected ClientService $clientService,
+        protected SocialNetworksService $socialNetworksService,
     ) {}
 
     public function handle(CallbackQuery $callbackQuery): void
@@ -44,6 +47,8 @@ class CallbackQueryHandler
             'specialists'          => fn() => $this->userService->showSpecialists($chatId, $data),
             'categories'           => fn() => $this->categoryService->showCategoriesToUser($chatId),
             'main_menu'            => fn() => $this->handleMainMenuCallback($chatId),
+            'socials_'             => fn() => $this->handleSpecialistSocialsCallback($chatId, $data),
+            'search'               => fn() => $this->userService->promptSearch($chatId, $data),
         ];
 
         foreach ($handlers as $prefix => $callback) {
@@ -73,6 +78,13 @@ class CallbackQueryHandler
 
     private function handleMainMenuCallback(int $chatId): void
     {
+        if (!$chatId) {
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => 'Iltimas dizimnen ótiń'
+            ]);
+            return;
+        }
         $this->clientService->showMainMenu($chatId);
     }
 
@@ -131,5 +143,11 @@ class CallbackQueryHandler
     {
         $specialistId = (int) substr($data, strlen('specialist_location_'));
         $this->locationService->sendSpecialistLocation($chatId, $specialistId);
+    }
+
+    private function handleSpecialistSocialsCallback(int $chatId, string $data): void
+    {
+        $specialistId = (int) substr($data, strlen('socials_'));
+        $this->socialNetworksService->showSpecialistSocials($chatId, $specialistId);
     }
 }

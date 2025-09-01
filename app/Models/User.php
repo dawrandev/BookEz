@@ -87,7 +87,7 @@ class User extends Authenticatable
         return $this->hasMany(Booking::class);
     }
 
-    public function networks()
+    public function socials()
     {
         return $this->hasMany(SocialNetworks::class);
     }

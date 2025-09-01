@@ -215,8 +215,7 @@ class CompletedBookingResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
-                    ->label('Просмотр'),
+                // 
             ])
             ->defaultSort('completed_at', 'desc')
             ->striped()
