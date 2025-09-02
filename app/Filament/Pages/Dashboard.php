@@ -16,6 +16,8 @@ use App\Filament\Widgets\SpecialistStatsWidget;
 use App\Filament\Widgets\SpecialistBookingsWidget;
 use App\Filament\Widgets\SpecialistsByCategoryChart;
 use App\Filament\Widgets\SpecialistScheduleWidget;
+use App\Filament\Widgets\SubscriptionStatsWidget;
+use App\Models\Subscription;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
 
@@ -37,13 +39,13 @@ class Dashboard extends BaseDashboard
                 RevenueChart::class,
                 ServicesChart::class,
                 MonthlyClientsChart::class,
-                LatestBookings::class,
             ];
         }
 
         if ($user->hasRole('admin')) {
             return [
                 AdminStatsWidget::class,
+                SubscriptionStatsWidget::class,
                 MonthlyAllClientsChart::class,
                 MonthlySpecialistsChart::class,
                 SpecialistsByCategoryChart::class,

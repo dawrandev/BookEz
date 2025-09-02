@@ -68,6 +68,13 @@ class User extends Authenticatable
         static::created(function ($user) {
             $user->assignRole('specialist');
         });
+
+        static::creating(function ($user) {
+            if (!$user->subscription_plan_id) {
+                $defaultPlan = SubscriptionPlan::getDefault();
+                $user->subscription_plan_id = $defaultPlan?->id;
+            }
+        });
     }
 
     public function category()
@@ -109,5 +116,77 @@ class User extends Authenticatable
             return Storage::url($this->photo);
         }
         return asset('images/default-avatar.png');
+    }
+
+    public function subscriptionPlan()
+    {
+        return $this->belongsTo(SubscriptionPlan::class);
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function activeSubscription()
+    {
+        return $this->hasOne(Subscription::class)
+            ->where('status', 'active')
+            ->where('end_date', '>=', now()->toDateString())
+            ->latest();
+    }
+
+    // Helper methods
+    public function hasActiveSubscription(): bool
+    {
+        return $this->activeSubscription()->exists();
+    }
+
+    public function getMonthlyPrice(): int
+    {
+        // Agar user uchun maxsus plan belgilangan bo'lsa
+        if ($this->subscriptionPlan) {
+            return $this->subscriptionPlan->price;
+        }
+
+        // Aks holda default plan narxini qaytarish
+        $defaultPlan = SubscriptionPlan::getDefault();
+        return $defaultPlan ? $defaultPlan->price : 200000;
+    }
+
+    public function getSubscriptionPlanName(): string
+    {
+        return $this->subscriptionPlan?->name ?? 'Стандарт';
+    }
+
+    public function canCalculateMonths(int $amount): int
+    {
+        $monthlyPrice = $this->getMonthlyPrice();
+        return floor($amount / $monthlyPrice);
+    }
+
+    public function createSubscription(int $amount, ?string $notes = null): Subscription
+    {
+        $monthlyPrice = $this->getMonthlyPrice();
+        $monthsCount = floor($amount / $monthlyPrice);
+
+        if ($monthsCount < 1) {
+            throw new \InvalidArgumentException(
+                "Summa kamida {$monthlyPrice} UZS (1 oylik to'lov) bo'lishi kerak"
+            );
+        }
+
+        $startDate = now()->toDateString();
+        $endDate = now()->addMonths($monthsCount)->toDateString();
+
+        return $this->subscriptions()->create([
+            'subscription_plan_id' => $this->subscription_plan_id,
+            'amount' => $amount,
+            'months_count' => $monthsCount,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'status' => 'active',
+            'notes' => $notes,
+        ]);
     }
 }

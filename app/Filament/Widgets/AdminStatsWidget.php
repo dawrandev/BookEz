@@ -30,21 +30,18 @@ class AdminStatsWidget extends BaseWidget
             })
             ->count();
 
-        // Сегодняшние завершенные бронирования
         $todayCompletedBookings = Booking::where('bookings.status', 'completed')
             ->whereHas('schedule', function ($query) use ($today) {
                 $query->whereDate('work_date', $today);
             })
             ->count();
 
-        // Завершенные бронирования за этот месяц
         $monthlyCompletedBookings = Booking::where('bookings.status', 'completed')
             ->whereHas('schedule', function ($query) use ($thisMonth) {
                 $query->where('work_date', '>=', $thisMonth);
             })
             ->count();
 
-        // Доход за этот месяц
         $monthlyRevenue = Booking::where('bookings.status', 'completed')
             ->whereHas('schedule', function ($query) use ($thisMonth) {
                 $query->where('work_date', '>=', $thisMonth);
@@ -77,11 +74,6 @@ class AdminStatsWidget extends BaseWidget
                 ->description('Текущий месяц')
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color('primary'),
-
-            Stat::make('Доход за месяц', number_format($monthlyRevenue) . ' SUM')
-                ->description('В текущем месяце')
-                ->descriptionIcon('heroicon-m-currency-dollar')
-                ->color('success'),
         ];
     }
 }

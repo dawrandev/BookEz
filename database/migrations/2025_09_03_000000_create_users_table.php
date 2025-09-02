@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('subscription_plan_id')->nullable()->constrained()->nullOnDelete();
             $table->string('telegram_id')->unique()->nullable();
             $table->string('telegram_chat_id')->unique()->nullable();
             $table->string('username')->nullable();
