@@ -16,6 +16,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Auth;
 
 class ClientResource extends Resource
 {
@@ -30,20 +31,19 @@ class ClientResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = \Filament\Facades\Filament::auth()->user();
 
-        if ($user && $user->role === 'admin') {
-            // Admin - barcha completed bookingga ega clientlarni ko'radi
-            return $query->whereHas('bookings', function (Builder $query) {
-                $query->where('status', 'completed');
-            });
-        } else {
-            // Specialist - faqat o'z completed bookinglaridagi clientlarni ko'radi
-            return $query->whereHas('bookings', function (Builder $query) {
-                $query->where('user_id', auth()->id())
+        if ($user && $user->hasRole('admin')) {
+            return $query;
+        } elseif ($user && $user->hasRole('specialist')) {
+            return $query->whereHas('bookings', function (Builder $subQuery) {
+                $subQuery->where('user_id', \Filament\Facades\Filament::auth()->id())
                     ->where('status', 'completed');
             });
         }
+
+        // Hech qanday role bo'lmasa - bo'sh natija
+        return $query->whereRaw('1 = 0');
     }
 
     public static function form(Form $form): Form
@@ -78,12 +78,10 @@ class ClientResource extends Resource
                     ->sortable()
                     ->searchable(),
 
-                // Clientning nechta completed booking borligini ko'rsatish
                 TextColumn::make('completed_bookings_count')
                     ->label('Услуг завершено')
-                    ->counts('bookings') // Munosabatni hisoblaymiz
+                    ->counts('bookings')
                     ->getStateUsing(function ($record) {
-                        // Admin bo'lsa barcha completed bookings
                         if (auth()->user()->role === 'admin') {
                             return $record->bookings()->where('status', 'completed')->count();
                         }
@@ -138,14 +136,37 @@ class ClientResource extends Resource
                     ->toggle(),
             ])
             ->actions([
-                // Tables\Actions\ViewAction::make()
-                //     ->label('Просмотр'),
+                Tables\Actions\ViewAction::make()
+                    ->label('Просмотр')
+                    ->modalHeading('Информация о клиенте')
+                    ->modalWidth('sm')
+                    ->form([  // 
+                        Forms\Components\TextInput::make('username')
+                            ->label('Имя пользователя')
+                            ->disabled(),
+
+                        Forms\Components\TextInput::make('full_name')
+                            ->label('Полное имя')
+                            ->disabled(),
+
+                        Forms\Components\TextInput::make('phone')
+                            ->label('Телефон')
+                            ->disabled(),
+
+                        Forms\Components\TextInput::make('telegram_id')
+                            ->label('Телеграм ID')
+                            ->disabled(),
+
+                        Forms\Components\TextInput::make('telegram_chat_id')
+                            ->label('Телеграм Чат ID')
+                            ->disabled(),
+                    ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    // Bulk actions faqat admin uchun
+                    // 
                     Tables\Actions\DeleteBulkAction::make()
-                        ->visible(fn() => auth()->user()->role === 'admin'),
+                        ->visible(fn() => auth()->user()->hasRole('admin')),
                 ]),
             ])
             ->defaultSort('created_at', 'desc')

@@ -44,12 +44,12 @@ class RatingService
             $booking = Booking::find($bookingId);
 
             if (!$booking) {
-                $this->sendMessage($chatId, "❌ Bron topilmadi");
+                $this->sendMessage($chatId, "❌ Bron tabılmadı");
                 return;
             }
 
             if ($booking->client->telegram_chat_id !== $chatId) {
-                $this->sendMessage($chatId, "❌ Siz bu bronni baholay olmaysiz");
+                $this->sendMessage($chatId, "❌ Siz bul brondı bahalay almaysız");
                 return;
             }
 
@@ -63,13 +63,13 @@ class RatingService
 
             $keyboard = [
                 [
-                    ['text' => '🏠 Bosh menyu', 'callback_data' => 'main_menu'],
-                    ['text' => '🔄 Yangi bron', 'callback_data' => 'specialists']
+                    ['text' => '🏠 Menyu', 'callback_data' => 'main_menu'],
+                    ['text' => '🔄 Jańa bron', 'callback_data' => 'specialists']
                 ]
             ];
 
-            $message = "✅ Baholaganingiz uchun rahmat!\n\n";
-            $message .= "Xizmatimizdan yana foydalanishingizni kutamiz.";
+            $message = "✅ Bahalaǵanıńız ushın ráxmet!\n\n";
+            $message .= "Xizmetimizden qaytadan paydalanıwıńızdı kútemiz";
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
@@ -85,7 +85,7 @@ class RatingService
                 'error' => $e->getMessage()
             ]);
 
-            $this->sendMessage($chatId, "❌ Baholashda xatolik yuz berdi");
+            $this->sendMessage($chatId, "❌ Bahalawda qátelik júz berdi. Qaytadan urınıp kóriń.");
         }
     }
 
@@ -94,14 +94,13 @@ class RatingService
         try {
             $keyboard = [
                 [
-                    ['text' => '🏠 Bosh menyu', 'callback_data' => 'main_menu'],
-                    ['text' => '🔄 Yangi bron', 'callback_data' => 'specialists']
+                    ['text' => '🏠 Menyu', 'callback_data' => 'main_menu'],
+                    ['text' => '🔄 Jańa bron', 'callback_data' => 'specialists']
                 ]
             ];
 
-            $message = "✅ <b>Yaxshi!</b>\n\n";
-            $message .= "Vaqtingiz uchun rahmat!\n";
-            $message .= "Xizmatlarimizdan yana foydalanishingizni kutamiz.";
+            $message = "✅ <b>Jaqsı!</b>\n\n";
+            $message .= "Xizmetimizden qaytadan paydalanıwıńızdı kútemiz";
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
@@ -128,12 +127,12 @@ class RatingService
             [['text' => '⭐️⭐️⭐️', 'callback_data' => "rate_{$bookingId}_3"]],
             [['text' => '⭐️⭐️⭐️⭐️', 'callback_data' => "rate_{$bookingId}_4"]],
             [['text' => '⭐️⭐️⭐️⭐️⭐️', 'callback_data' => "rate_{$bookingId}_5"]],
-            [['text' => '⏭ O‘tkazib yuborish', 'callback_data' => "skip_rating_{$bookingId}"]],
+            [['text' => '⏭ Ótkizip jiberiw', 'callback_data' => "skip_rating_{$bookingId}"]],
         ];
 
         Telegram::sendMessage([
             'chat_id' => $chatId,
-            'text' => "❓ Xizmatni baholang:",
+            'text' => "❓ Xizmetti bahalań:",
             'reply_markup' => json_encode(['inline_keyboard' => $keyboard])
         ]);
     }

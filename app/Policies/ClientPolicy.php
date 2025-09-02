@@ -10,7 +10,7 @@ class ClientPolicy
 {
     public function before(User $user, $ability)
     {
-        if ($user->hasRole('admin')) {
+        if ($user->hasRole('admin') && in_array($ability, ['viewAny', 'view'])) {
             return true;
         }
 

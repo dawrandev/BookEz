@@ -64,8 +64,21 @@ class UserResource extends Resource
                     ->label('Логин')
                     ->required(),
 
+                TextInput::make('username')
+                    ->label('Username')
+                    ->placeholder('Telegram username'),
+
                 TextInput::make('phone')
                     ->label('Телефон'),
+
+                TextInput::make('telegram_id')
+                    ->label('Telegram ID')
+                    ->numeric()
+                    ->placeholder('Telegram user ID'),
+
+                TextInput::make('telegram_chat_id')
+                    ->label('Telegram Chat ID')
+                    ->placeholder('Telegram chat ID'),
 
                 TextInput::make('password')
                     ->label('Пароль')
@@ -101,7 +114,11 @@ class UserResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('index')->label('№')->rowIndex(),
-                ImageColumn::make('photo')->label('Фото')->circular()->size(60),
+                ImageColumn::make('photo')
+                    ->label('Фото')
+                    ->circular()
+                    ->size(60)
+                    ->defaultImageUrl(asset('storage/profile-photos/avatar.jpg')),
                 TextColumn::make('category.name')->label('Категория')->sortable()->searchable(),
                 TextColumn::make('name')->label('Имя')->sortable()->searchable(),
                 TextColumn::make('login')->label('Логин')->sortable()->searchable(),

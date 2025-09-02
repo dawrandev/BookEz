@@ -109,9 +109,9 @@ class Booking extends Model
     public function getStatusTextAttribute(): string
     {
         return match ($this->status) {
-            'pending' => 'Kútilúde',
+            'pending' => 'Kútilmekte',
             'confirmed' => 'Tastıyıqlandı',
-            'canceled' => 'Bıykarllandı',
+            'canceled' => 'Bıykarlandı',
             'completed' => 'Juwmaqlandı',
             default => $this->status
         };

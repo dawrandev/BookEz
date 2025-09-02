@@ -170,6 +170,7 @@ class BookingService
 
         return $keyboard;
     }
+
     private function getPaginationButtons(int $specialistId, Schedule $currentSchedule, int $serviceId): array
     {
         $buttons = [];
@@ -280,6 +281,12 @@ class BookingService
             'end_time' => $endTime->format('H:i'),
             'status' => 'pending',
         ]);
+
+        $this->telegramNotificationService->sendBookingCreated($booking);
+
+        $bookingLink = env('APP_URL') . "/admin/bookings/{$booking->id}";
+
+        $this->telegramNotificationService->sendNewBookingToSpecialist($booking, $bookingLink);
 
         $specialist = User::find($schedule->user_id);
         if ($specialist) {
