@@ -13,10 +13,6 @@ class SocialNetworksPolicy
         if ($user->hasRole('specialist')) {
             return true;
         }
-
-        if ($user->hasRole('admin') && in_array($ability, ['viewAny', 'view'])) {
-            return true;
-        }
     }
     /**
      * Determine whether the user can view any models.

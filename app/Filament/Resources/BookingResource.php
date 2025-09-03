@@ -199,7 +199,6 @@ class BookingResource extends Resource
 
                 Tables\Columns\TextColumn::make('service.price')
                     ->label('Цена')
-                    ->money('USD')
                     ->sortable()
                     ->weight('bold'),
 

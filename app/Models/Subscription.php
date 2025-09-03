@@ -37,6 +37,49 @@ class Subscription extends Model
     const STATUS_PENDING = 'pending';
 
     /**
+     * Model Events - User statusini boshqarish uchun
+     */
+    protected static function booted()
+    {
+        parent::booted();
+
+        // Subscription yaratilganda
+        static::created(function ($subscription) {
+            if ($subscription->subscriptionPlan && $subscription->user) {
+                // User ga plan ni biriktirish
+                $subscription->user->update([
+                    'subscription_plan_id' => $subscription->subscription_plan_id
+                ]);
+            }
+
+            // User statusini yangilash
+            $subscription->updateUserStatus();
+        });
+
+        // Subscription yangilanganda
+        static::updated(function ($subscription) {
+            // Agar status yoki end_date o'zgarga bo'lsa, user statusini yangilash
+            if ($subscription->isDirty(['status', 'end_date'])) {
+                $subscription->updateUserStatus();
+            }
+        });
+
+        // Subscription o'chirilganda
+        static::deleted(function ($subscription) {
+            if ($subscription->user) {
+                // User statusini yangilash (deleted subscription oldidagi holatni olish uchun)
+                $subscription->user->updateStatusBasedOnSubscriptions();
+            }
+        });
+
+        // Saqlashdan oldin statusni tekshirish
+        static::saving(function ($subscription) {
+            if ($subscription->end_date < now()->toDateString()) {
+                $subscription->status = self::STATUS_EXPIRED;
+            }
+        });
+    }
+    /**
      * Relationships
      */
     public function user(): BelongsTo
@@ -117,6 +160,27 @@ class Subscription extends Model
             self::STATUS_PENDING => 'Ожидание',
             default => $this->status
         };
+    }
+
+    /**
+     * User statusini yangilash - ASOSIY METOD
+     */
+    public function updateUserStatus(): void
+    {
+        if (!$this->user) {
+            return;
+        }
+
+        $hasActiveSubscription = $this->user->subscriptions()
+            ->where('status', self::STATUS_ACTIVE)
+            ->where('end_date', '>=', now()->toDateString())
+            ->exists();
+
+        $newStatus = $hasActiveSubscription ? 'active' : 'inactive';
+
+        if ($this->user->status !== $newStatus) {
+            $this->user->update(['status' => $newStatus]);
+        }
     }
 
     /**
@@ -242,26 +306,45 @@ class Subscription extends Model
     }
 
     /**
-     * Model Events
+     * Barcha eski subscriptionlarni expire qilish - Static method
      */
-    protected static function boot()
+    public static function expireOldSubscriptions(): int
     {
-        parent::boot();
+        $expiredSubscriptions = self::where('status', self::STATUS_ACTIVE)
+            ->where('end_date', '<', now()->toDateString())
+            ->get();
 
-        // Saqlashdan oldin statusni tekshirish
-        static::saving(function ($subscription) {
-            if ($subscription->end_date < now()->toDateString()) {
-                $subscription->status = self::STATUS_EXPIRED;
-            }
-        });
+        $count = 0;
+        foreach ($expiredSubscriptions as $subscription) {
+            $subscription->update(['status' => self::STATUS_EXPIRED]);
+            $count++;
+        }
 
-        // Subscription yaratilganda user ga plan ni biriktirish
-        static::created(function ($subscription) {
-            if ($subscription->subscriptionPlan && $subscription->user) {
-                $subscription->user->update([
-                    'subscription_plan_id' => $subscription->subscription_plan_id
-                ]);
+        return $count;
+    }
+
+    /**
+     * Barcha userlar statusini yangilash - Static method
+     */
+    public static function updateAllUserStatuses(): int
+    {
+        $users = \App\Models\User::with('subscriptions')->get();
+        $updatedCount = 0;
+
+        foreach ($users as $user) {
+            $hasActiveSubscription = $user->subscriptions()
+                ->where('status', self::STATUS_ACTIVE)
+                ->where('end_date', '>=', now()->toDateString())
+                ->exists();
+
+            $newStatus = $hasActiveSubscription ? 'active' : 'inactive';
+
+            if ($user->status !== $newStatus) {
+                $user->update(['status' => $newStatus]);
+                $updatedCount++;
             }
-        });
+        }
+
+        return $updatedCount;
     }
 }

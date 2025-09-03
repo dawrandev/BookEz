@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\User;
 use App\Models\Client;
 use App\Models\Booking;
+use App\Models\Subscription;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -17,13 +18,12 @@ class AdminStatsWidget extends BaseWidget
         $today = Carbon::today();
         $thisMonth = Carbon::now()->startOfMonth();
 
-        // Количество специалистов
         $specialistsCount = User::role('specialist')->count();
 
-        // Количество клиентов
-        $clientsCount = Client::count();
+        $clientsCount = Client::whereHas('bookings', function ($query) {
+            $query->where('status', 'completed');
+        })->count();
 
-        // Активные специалисты (за последние 30 дней были бронирования)
         $activeSpecialists = User::role('specialist')
             ->whereHas('bookings', function ($query) {
                 $query->where('created_at', '>=', Carbon::now()->subDays(30));
@@ -49,6 +49,15 @@ class AdminStatsWidget extends BaseWidget
             ->join('services', 'bookings.service_id', '=', 'services.id')
             ->sum('services.price');
 
+        $totalSubscriptionAmount = Subscription::sum('amount');
+
+        $monthlySubscriptionAmount = Subscription::whereMonth('created_at', $thisMonth->month)
+            ->whereYear('created_at', $thisMonth->year)
+            ->sum('amount');
+
+        $activeSubscriptionAmount = Subscription::where('status', Subscription::STATUS_ACTIVE)
+            ->sum('amount');
+
         return [
             Stat::make('Всего специалистов', $specialistsCount)
                 ->description('Зарегистрированы в системе')
@@ -65,15 +74,20 @@ class AdminStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-check-badge')
                 ->color('warning'),
 
+            Stat::make('Общая сумма подписок', number_format($totalSubscriptionAmount) . ' UZS')
+                ->description('Все подписки')
+                ->descriptionIcon('heroicon-m-currency-dollar')
+                ->color('success'),
+
+            Stat::make('Подписки за месяц', number_format($monthlySubscriptionAmount) . ' UZS')
+                ->description('Текущий месяц')
+                ->descriptionIcon('heroicon-m-banknotes')
+                ->color('primary'),
+
             Stat::make('Сегодняшние услуги', $todayCompletedBookings)
                 ->description('Выполненные сегодня')
                 ->descriptionIcon('heroicon-m-calendar-days')
                 ->color('success'),
-
-            Stat::make('Услуги за месяц', $monthlyCompletedBookings)
-                ->description('Текущий месяц')
-                ->descriptionIcon('heroicon-m-chart-bar')
-                ->color('primary'),
         ];
     }
 }

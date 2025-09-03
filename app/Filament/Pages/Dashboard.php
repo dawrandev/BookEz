@@ -36,8 +36,14 @@ class Dashboard extends BaseDashboard
                 StatsOverviewWidget::class,
                 AdditionalStatsWidget::class,
                 MonthlyRevenueChart::class,
-                RevenueChart::class,
-                ServicesChart::class,
+                [
+                    'widget' => RevenueChart::class,
+                    'columnSpan' => 6,
+                ],
+                [
+                    'widget' => ServicesChart::class,
+                    'columnSpan' => 6,
+                ],
                 MonthlyClientsChart::class,
             ];
         }
