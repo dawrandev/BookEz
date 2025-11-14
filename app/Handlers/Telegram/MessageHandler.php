@@ -36,7 +36,6 @@ class MessageHandler
                 return;
             }
 
-            // Search mode tekshiruvi - eng birinchi
             if ($this->searchService->isSearchModeActive($this->chatId)) {
                 Log::info("Search mode active for chat: {$this->chatId}, query: {$this->text}");
                 $this->searchService->handleSearchQuery($this->chatId, $this->text);

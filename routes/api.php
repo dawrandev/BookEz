@@ -9,3 +9,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::post('/telegram/webhook', [TelegramController::class, 'handle']);
+
+Route::get('/webapp', function () {
+    return view('webapp');
+});

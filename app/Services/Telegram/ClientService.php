@@ -151,6 +151,9 @@ class ClientService
                 return;
             }
 
+            $webAppUrl = "https://dawran.dbc-server.uz/admin";
+
+
             $keyboard = json_encode([
                 'inline_keyboard' => [
                     [
@@ -162,6 +165,12 @@ class ClientService
                     ],
                     [
                         ['text' => '🔍Izlew', 'callback_data' => 'search'],
+                    ],
+                    [
+                        [
+                            'text' => '🚀 WebApp-dı ashıw',
+                            'web_app' => ['url' => $webAppUrl]
+                        ]
                     ]
                 ]
             ]);
@@ -176,6 +185,7 @@ class ClientService
             $this->sendMessage($chatId, 'Iltimas dizimnen ótiń');
         }
     }
+
 
 
     private function sendMessage(int $chatId, string $text): void

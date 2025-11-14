@@ -36,14 +36,8 @@ class Dashboard extends BaseDashboard
                 StatsOverviewWidget::class,
                 AdditionalStatsWidget::class,
                 MonthlyRevenueChart::class,
-                [
-                    'widget' => RevenueChart::class,
-                    'columnSpan' => 6,
-                ],
-                [
-                    'widget' => ServicesChart::class,
-                    'columnSpan' => 6,
-                ],
+                RevenueChart::class,
+                ServicesChart::class,
                 MonthlyClientsChart::class,
             ];
         }
@@ -57,7 +51,10 @@ class Dashboard extends BaseDashboard
                 SpecialistsByCategoryChart::class,
             ];
         }
+
+        return [];
     }
+
 
     public function getColumns(): int | string | array
     {

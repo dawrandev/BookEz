@@ -111,15 +111,12 @@ class ListSchedules extends ListRecords
 
     public function getDefaultActiveTab(): string
     {
-        // Default holatda "Эта неделя" tab ochiq bo'ladi
         return 'this_week';
     }
 
     protected function getHeaderWidgets(): array
     {
-        return [
-            // Haftalik statistika widget qo'shish mumkin
-        ];
+        return [];
     }
 
     // Yangi yaratilgandan keyin tegishli tab'ga yo'naltirish
